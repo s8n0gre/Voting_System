@@ -4,8 +4,8 @@ import { fileURLToPath } from 'url';
 import express from 'express';
 import cors from 'cors';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.join(__dirname, '.env') });
+const _appDir = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(_appDir, '.env') });
 
 import { createSchema } from './database/schema.js';
 import roleRoutes from './routes/role-routes.js';
