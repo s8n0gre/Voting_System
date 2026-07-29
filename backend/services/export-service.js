@@ -5,7 +5,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const _srvDir = path.dirname(fileURLToPath(import.meta.url));
 
 export async function generateExcelReport() {
   const { executiveResults, supportingResults } = await getResults();
@@ -37,7 +37,7 @@ export async function generateExcelReport() {
 
 export async function generateNominationsReport() {
   const buffer = await getNominationsReportBuffer();
-  const resultsDir = path.join(__dirname, '..', '..', 'results');
+  const resultsDir = path.join(_srvDir, '..', '..', 'results');
   await mkdir(resultsDir, { recursive: true });
   await writeFile(path.join(resultsDir, 'results.xlsx'), buffer);
 }
