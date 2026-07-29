@@ -1,6 +1,11 @@
 node_modules/
 dist/
+.astro/
 .env
 backend/node_modules/
 results/*.xlsx
 *.zip
+*.db
+*.db-shm
+*.db-wal
+*.xlsx
