@@ -1,0 +1,578 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Navbar from "../../components/Navbar.astro";
+import Footer from "../../components/Footer.astro";
+import { Toast } from "../../components/Toast";
+---
+
+<BaseLayout title="Coordinator Nomination" description="View nominees and vote for coordinator roles.">
+  <Navbar />
+  <Toast client:load />
+
+  <main id="main-content" style="position:relative; z-index:1;">
+
+    <div class="page-top">
+      <a href="/" class="back-link" aria-label="Back to home page">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to Candidates
+      </a>
+    </div>
+
+    <div class="sr-page">
+
+      <div id="sr-loading" class="sr-loading">
+        <div class="skeleton" style="height:80px; border-radius:1rem; max-width:400px;"></div>
+        <div class="skeleton" style="height:40px; border-radius:0.75rem; max-width:300px; margin-top:0.5rem;"></div>
+        <div class="skeleton" style="height:200px; border-radius:1rem; margin-top:1rem;"></div>
+      </div>
+
+      <div id="sr-error" style="display:none;" role="alert" class="error-box">
+        <p>Failed to load. Please go back and try again.</p>
+        <a href="/" class="btn-ghost" style="margin-top:0.75rem; display:inline-flex;">← Go Home</a>
+      </div>
+
+      <div id="sr-content" style="display:none;">
+
+        <!-- Executive header -->
+        <div class="exec-header glass-card">
+          <div class="exec-header-left">
+            <div id="exec-avatar" class="exec-avatar"></div>
+            <div>
+              <div id="exec-badge" class="badge"></div>
+              <h1 id="exec-name" class="exec-name"></h1>
+            </div>
+          </div>
+          <div class="exec-header-right">
+            <p class="exec-instruction">Co-ordinator Role : <span id="role-name-box" class="role-name-box"></span></p>
+            <p id="role-description" class="role-description"></p>
+          </div>
+        </div>
+
+        <!-- Nominees section -->
+        <div class="nominees-section">
+
+          <div class="nominees-header">
+            <h2 class="nominees-title">Nominees</h2>
+            <div class="nominee-actions">
+              <button id="withdraw-btn" class="btn-withdraw" style="display:none;" title="Withdraw your nomination">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Withdraw
+              </button>
+              <button id="nominate-btn" class="btn-nominate" title="Nominate yourself">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Nominate Yourself
+              </button>
+            </div>
+          </div>
+
+          <div id="nominees-list" class="nominees-list">
+            <div class="nominees-empty" id="nominees-empty">
+              <p>No nominees yet. Be the first to nominate yourself!</p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Notification toast (inline) -->
+        <div id="notif-toast" class="notif-toast" style="display:none;"></div>
+
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<script>
+  import { getSessionEmail, getSessionVoted } from "../../lib/auth";
+  import { getRoles, getNominations, nominateSelf, voteNominee, getMyNominations, verifyStudentEmail, withdrawNomination } from "../../lib/api";
+
+  const email = getSessionEmail();
+  if (!email) { window.location.href = "/"; }
+  if (getSessionVoted()) { window.location.href = "/thank-you"; }
+
+  const params = new URLSearchParams(window.location.search);
+  const execId = params.get("exec");
+  const roleTitle = params.get("role");
+  if (!execId || !roleTitle) { window.location.href = "/"; }
+
+  let myNoms: Array<{ id: number; executiveCandidateId: number; roleTitle: string }> = [];
+  let currentUserEmail = email.toLowerCase();
+  let isCurrentUserExec = false;
+
+  const responsibilities: Record<string, string> = {
+    "Strategy Coordinator": "Develop the annual roadmap, monitor community goals, track performance, and ensure all initiatives align with the community's vision and mission.",
+    "Industry Relations": "Build relationships with faculty, alumni, industry professionals, and external communities. Coordinate guest lectures, partnerships, and networking opportunities.",
+    "Executive Coordinator": "Support executive meetings, coordinate with all leadership teams, follow up on decisions, and ensure smooth execution of strategic initiatives.",
+    "Operations Coordinator": "Manage daily operations, coordinate inter-team activities, monitor task completion, and ensure events and projects are executed on time.",
+    "Project Coordinator": "Oversee technical and community projects, assign responsibilities, monitor milestones, and maintain project documentation.",
+    "Resource Coordinator": "Manage event logistics, lab resources, budgets, inventory, and operational requirements for community activities.",
+    "Administration Coordinator": "Manage official records, attendance, member registration, and administrative activities.",
+    "Documentation Coordinator": "Prepare meeting minutes, reports, proposals, newsletters, and maintain the community knowledge repository.",
+    "Communication Coordinator": "Handle official announcements, email communications, notices, and internal coordination between members and leadership.",
+    "Learning Coordinator": "Organize technical workshops, bootcamps, certification sessions, and mentoring programs.",
+    "Project Coordinator (Tech)": "Lead application development, hackathons, innovation challenges, and technical collaboration among members.",
+    "AI & Automation Coordinator": "Drive AI initiatives, workflow automation, research on emerging technologies, and platform innovation.",
+    "Events Coordinator": "Plan and execute workshops, seminars, competitions, community meetups, and flagship events.",
+    "Engagement Coordinator": "Increase member participation, manage social media, run campaigns, recruit volunteers, and strengthen community engagement.",
+    "Partnership Coordinator": "Coordinate collaborations with student clubs, alumni, faculty, and industry organizations while expanding the community network.",
+    "Creative Design Coordinator": "Design posters, banners, certificates, presentations, and all visual assets for community initiatives.",
+    "Media Production Coordinator": "Capture and edit event photography, videography, promotional videos, and highlight reels.",
+    "Branding Coordinator": "Maintain the community's brand identity, content standards, creative templates, and visual consistency across all platforms.",
+  };
+
+  function showNotif(msg: string, isError = false) {
+    const el = document.getElementById("notif-toast")!;
+    el.textContent = msg;
+    el.className = "notif-toast" + (isError ? " notif-error" : " notif-success");
+    el.style.display = "block";
+    setTimeout(() => { el.style.display = "none"; }, 3500);
+  }
+
+  async function loadData() {
+    const loadingEl = document.getElementById("sr-loading")!;
+    const errorEl   = document.getElementById("sr-error")!;
+    const contentEl = document.getElementById("sr-content")!;
+
+    try {
+      const execs = await getRoles();
+      const exec = execs.find((e) => e.id === Number(execId));
+      if (!exec) throw new Error("Executive not found");
+
+      // Check if current user is this executive leader
+      isCurrentUserExec = exec.email && exec.email.toLowerCase() === currentUserEmail;
+
+      loadingEl.style.display = "none";
+      contentEl.style.display = "block";
+
+      renderExecHeader(exec);
+      document.getElementById("role-name-box")!.textContent = decodeURIComponent(roleTitle);
+      document.getElementById("role-description")!.textContent = responsibilities[decodeURIComponent(roleTitle)] || "";
+
+      // Get user's existing nominations
+      try { myNoms = await getMyNominations(currentUserEmail); } catch { /* ignore */ }
+
+      loadNominees();
+
+      const nominateBtn = document.getElementById("nominate-btn")!;
+      const withdrawBtn = document.getElementById("withdraw-btn")!;
+
+      // Check nomination status for this exec
+      const myNomForThisExec = myNoms.find(n => n.executiveCandidateId === Number(execId));
+      const myNomForThisRole = myNoms.find(n => n.executiveCandidateId === Number(execId) && n.roleTitle === decodeURIComponent(roleTitle));
+
+      // Show/hide buttons based on nomination state
+      if (isCurrentUserExec) {
+        nominateBtn.style.display = "none";
+        withdrawBtn.style.display = "none";
+      } else if (myNomForThisRole) {
+        nominateBtn.style.display = "none";
+        withdrawBtn.style.display = "inline-flex";
+        withdrawBtn.setAttribute("data-nom-id", String(myNomForThisRole.id));
+      } else if (myNomForThisExec) {
+        nominateBtn.style.display = "none";
+        withdrawBtn.style.display = "none";
+        showNotif("You already nominated yourself for another role under this executive.", true);
+      }
+
+      // Nominate self
+      nominateBtn.addEventListener("click", async () => {
+        try {
+          const studentData = await verifyStudentEmail(currentUserEmail);
+          const studentName = studentData.student?.name || currentUserEmail.split("@")[0];
+
+          await nominateSelf({
+            executiveCandidateId: Number(execId),
+            roleTitle: decodeURIComponent(roleTitle),
+            email: currentUserEmail,
+            name: studentName,
+          });
+          showNotif("You have been nominated successfully!");
+          myNoms.push({ id: 0, executiveCandidateId: Number(execId), roleTitle: decodeURIComponent(roleTitle) });
+          loadNominees();
+          window.location.reload();
+        } catch (err: any) {
+          showNotif(err.message || "Failed to nominate. Try again.", true);
+        }
+      });
+
+      // Withdraw
+      withdrawBtn.addEventListener("click", async () => {
+        const nomId = withdrawBtn.getAttribute("data-nom-id");
+        if (!nomId) return;
+        try {
+          await withdrawNomination(Number(nomId), currentUserEmail);
+          showNotif("Your nomination has been withdrawn.");
+          myNoms = myNoms.filter(n => n.id !== Number(nomId));
+          loadNominees();
+          window.location.reload();
+        } catch (err: any) {
+          showNotif(err.message || "Failed to withdraw.", true);
+        }
+      });
+
+    } catch {
+      loadingEl.style.display = "none";
+      errorEl.style.display   = "block";
+    }
+  }
+
+  async function loadNominees() {
+    const listEl = document.getElementById("nominees-list")!;
+    const emptyEl = document.getElementById("nominees-empty")!;
+
+    try {
+      const nominees = await getNominations(execId!, roleTitle!);
+
+      if (!nominees.length) {
+        listEl.innerHTML = `<div class="nominees-empty"><p>No nominees yet. Be the first to nominate yourself!</p></div>`;
+        return;
+      }
+
+      listEl.innerHTML = nominees.map(n => {
+        const isSelf = n.studentEmail.toLowerCase() === currentUserEmail;
+        const alreadyVoted = false; // We'll check per nominee
+
+        return `
+          <div class="nominee-row">
+            <div class="nominee-card glass-card">
+              <div class="nominee-info">
+                <div class="nominee-avatar">${getInitials(n.studentName)}</div>
+                <div class="nominee-details">
+                  <span class="nominee-name">${n.studentName}${isSelf ? ' <span class="nominee-self">(You)</span>' : ''}</span>
+                  <span class="nominee-email">${n.studentEmail}</span>
+                </div>
+              </div>
+              <div class="nominee-card-right">
+                <button class="btn-vote-thumb" data-nom-id="${n.id}" ${isSelf || isCurrentUserExec ? 'disabled' : ''}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/></svg>
+                  <span class="vote-count-num">${n.voteCount}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // Bind vote buttons
+      listEl.querySelectorAll(".btn-vote-thumb:not([disabled])").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const nomId = Number(btn.getAttribute("data-nom-id"));
+          try {
+            await voteNominee(currentUserEmail, nomId);
+            showNotif("Vote cast successfully!");
+            loadNominees();
+          } catch (err: any) {
+            showNotif(err.message || "Failed to vote.", true);
+            loadNominees();
+          }
+        });
+      });
+
+    } catch {
+      listEl.innerHTML = `<div class="nominees-empty"><p>Failed to load nominees.</p></div>`;
+    }
+  }
+
+  function getInitials(name: string) {
+    return name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+  }
+
+  function renderExecHeader(exec: { id: number; name: string; role: string; email?: string; profileImage?: string }) {
+    const avatarEl = document.getElementById("exec-avatar")!;
+    const badgeEl  = document.getElementById("exec-badge")!;
+    const nameEl   = document.getElementById("exec-name")!;
+
+    const initials = getInitials(exec.name);
+    if (exec.profileImage) {
+      avatarEl.innerHTML = `<img src="${exec.profileImage}" alt="${exec.name}" class="exec-avatar-img"/>`;
+    } else {
+      avatarEl.innerHTML = `<div class="exec-avatar-init">${initials}</div>`;
+    }
+    badgeEl.textContent = exec.role;
+    nameEl.textContent  = exec.name;
+  }
+
+  loadData();
+</script>
+
+<style>
+  .page-top {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1.5rem 1.5rem 0;
+  }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--accent-light); }
+
+  .sr-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1.5rem 1.5rem 5rem;
+  }
+  .sr-loading {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .error-box { text-align: center; padding: 3rem; color: var(--text-muted); }
+
+  .exec-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .exec-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .exec-avatar {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .exec-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+  .exec-avatar-init {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--accent) 0%, #6d28d9 100%);
+    color: #fff; font-size: 1.2rem; font-weight: 800;
+  }
+  .exec-name { font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin: 0.25rem 0 0; letter-spacing: -0.02em; }
+  .exec-header-right { max-width: 400px; }
+  .exec-instruction { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin: 0; }
+  .role-description {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin: 0.5rem 0 0;
+    max-width: 380px;
+  }
+  .role-name-box {
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    border-radius: 0.4rem;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    font-weight: 600;
+    font-size: 0.82rem;
+  }
+
+  @media (max-width: 640px) {
+    .exec-header { flex-direction: column; text-align: center; }
+    .exec-header-left { flex-direction: column; }
+    .exec-header-right { max-width: 100%; }
+  }
+
+  /* ── Nominees Section ───────────────────────────────────── */
+  .nominees-section { margin-top: 1.5rem; }
+
+  .nominees-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+  .nominees-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .btn-nominate {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--accent);
+    background: var(--accent-glow);
+    color: var(--accent-light);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-nominate:hover {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-nominate:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    border-color: var(--border-color);
+    color: var(--text-muted);
+    background: transparent;
+  }
+
+  .nominee-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .btn-withdraw {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.75rem;
+    border: 1px solid #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-withdraw:hover {
+    background: #ef4444;
+    color: #fff;
+  }
+
+  /* ── Nominee Card ───────────────────────────────────────── */
+  .nominees-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .nominees-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+</style>
+
+<!-- Global styles for dynamically-rendered nominee elements -->
+<style is:global>
+  .nominee-row {
+    display: flex;
+  }
+  .nominee-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    flex: 1;
+  }
+  .nominee-info {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    flex: 1;
+    min-width: 0;
+  }
+  .nominee-avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent) 0%, #6d28d9 100%);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .nominee-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+  .nominee-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .nominee-self {
+    font-size: 0.75rem;
+    color: var(--accent-light);
+    font-weight: 500;
+  }
+  .nominee-email {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .nominee-card-right { margin-left: auto; flex-shrink: 0; }
+  .btn-vote-thumb {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.5rem 0.7rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--accent);
+    background: transparent;
+    color: var(--accent-light);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    line-height: 1;
+  }
+  .btn-vote-thumb:hover:not(:disabled) {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-vote-thumb:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    border-color: var(--border-color);
+    color: var(--text-muted);
+  }
+  .vote-count-num {
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  @media (max-width: 480px) {
+    .nominee-card { flex-direction: row; align-items: center; }
+  }
+
+  /* ── Notification Toast ─────────────────────────────────── */
+  .notif-toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    z-index: 300;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  }
+  .notif-success {
+    background: #1dbf73;
+    color: #fff;
+  }
+  .notif-error {
+    background: #ef4444;
+    color: #fff;
+  }
+
+  @media (max-width: 480px) {
+    .nominees-header { flex-direction: column; align-items: flex-start; }
+  }
+</style>

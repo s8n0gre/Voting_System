@@ -1,0 +1,50 @@
+---
+// BaseLayout.astro — shared wrapper for all pages
+import "../styles/global.css";
+
+export interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "SNOW Campus Community — Official Election Portal" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#0a1118" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <title>{title} — SNOW Campus Elections</title>
+  </head>
+  <body>
+    <!-- Theme init (prevents flash) -->
+    <script is:inline>
+      (function () {
+        const saved = localStorage.getItem("theme");
+        const preferred = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", saved || preferred);
+      })();
+    </script>
+
+    <slot />
+
+    <!-- Theme toggle global handler -->
+    <script>
+      function applyTheme(theme: string) {
+        document.documentElement.setAttribute("data-theme", theme);
+        localStorage.setItem("theme", theme);
+      }
+
+      document.addEventListener("click", (e) => {
+        const btn = (e.target as HTMLElement).closest("[data-theme-toggle]");
+        if (!btn) return;
+        const current = document.documentElement.getAttribute("data-theme") ?? "dark";
+        applyTheme(current === "dark" ? "light" : "dark");
+      });
+    </script>
+  </body>
+</html>

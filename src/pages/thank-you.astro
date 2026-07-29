@@ -1,0 +1,219 @@
+---
+// src/pages/thank-you.astro — post-vote confirmation + live results
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Navbar from "../components/Navbar.astro";
+import Footer from "../components/Footer.astro";
+import { ResultsBar } from "../components/ResultsBar";
+import { Toast } from "../components/Toast";
+---
+
+<BaseLayout
+  title="Thank You"
+  description="Your vote has been recorded. Thank you for participating!"
+>
+  <Navbar />
+  <Toast client:load />
+
+  <main id="main-content" style="position:relative; z-index:1; min-height:80vh;">
+    <div class="ty-page">
+
+      <!-- Success Card -->
+      <div class="ty-card glass-card animate-fade-up">
+        <!-- Check icon -->
+        <div class="ty-icon" aria-hidden="true">
+          <div class="check-ring">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+        </div>
+
+        <h1 class="ty-title">Thank you for voting!</h1>
+        <p class="ty-subtitle">
+          Your vote has been securely recorded. You can monitor the live results below.
+        </p>
+
+        <!-- Vote summary (populated by JS) -->
+        <div id="vote-summary" class="vote-summary" style="display:none;" aria-label="Your vote summary">
+          <div class="summary-row">
+            <span class="summary-label">Executive Candidate</span>
+            <div>
+              <p id="summary-exec-name" class="summary-value"></p>
+              <p id="summary-exec-role" class="summary-role"></p>
+            </div>
+          </div>
+          <div class="summary-divider" aria-hidden="true"></div>
+          <div class="summary-row">
+            <span class="summary-label">Supporting Member</span>
+            <div>
+              <p id="summary-support-name" class="summary-value"></p>
+              <p id="summary-support-role" class="summary-role"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="ty-actions">
+          <a href="/" class="btn-ghost" id="home-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            Return Home
+          </a>
+        </div>
+      </div>
+
+      <!-- Live Results -->
+      <div class="results-section animate-fade-up" style="animation-delay:0.1s;">
+        <div class="results-header">
+          <h2 class="section-title" style="font-size:1.25rem;">Live Results</h2>
+          <p class="section-subtitle" style="font-size:0.85rem; margin-top:0.25rem;">
+            Updated every few seconds. Results are read-only.
+          </p>
+        </div>
+        <ResultsBar client:load pollInterval={8000} />
+      </div>
+
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<script>
+  import { getSessionEmail, getVoteSelection } from "../lib/auth";
+
+  // ── Show vote summary if we have selection data ─────────────
+  const sel = getVoteSelection();
+
+  if (sel.executiveCandidateName && sel.supportingCandidateName) {
+    const summary = document.getElementById("vote-summary")!;
+    document.getElementById("summary-exec-name")!.textContent = sel.executiveCandidateName;
+    document.getElementById("summary-exec-role")!.textContent = sel.executiveRole ?? "";
+    document.getElementById("summary-support-name")!.textContent = sel.supportingCandidateName;
+    document.getElementById("summary-support-role")!.textContent = sel.supportingRoleTitle ?? "";
+    summary.style.display = "flex";
+  }
+</script>
+
+<style>
+  .ty-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 4rem 1.5rem 5rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+    align-items: start;
+  }
+
+  .ty-card {
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1.25rem;
+    position: sticky;
+    top: 5.5rem;
+  }
+
+  .ty-icon {
+    margin-bottom: 0.25rem;
+  }
+
+  .check-ring {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(34, 197, 94, 0.1);
+    border: 2px solid rgba(34, 197, 94, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4ade80;
+    animation: pulse-glow 2.5s infinite;
+  }
+
+  .ty-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0;
+    letter-spacing: -0.02em;
+  }
+
+  .ty-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    max-width: 340px;
+    margin: 0;
+  }
+
+  /* Vote summary */
+  .vote-summary {
+    width: 100%;
+    flex-direction: column;
+    gap: 0;
+    background: var(--glass-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 0.875rem;
+    overflow: hidden;
+    text-align: left;
+  }
+
+  .summary-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 1rem 1.25rem;
+  }
+
+  .summary-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+  }
+
+  .summary-value {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .summary-role {
+    margin: 0.1rem 0 0;
+    font-size: 0.8rem;
+    color: var(--accent-light);
+  }
+
+  .summary-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 0;
+  }
+
+  .ty-actions {
+    margin-top: 0.5rem;
+  }
+
+  /* Results section */
+  .results-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .results-header { margin-bottom: 0.5rem; }
+
+  @media (max-width: 768px) {
+    .ty-page {
+      grid-template-columns: 1fr;
+      padding: 2.5rem 1.25rem 4rem;
+    }
+    .ty-card { position: static; }
+  }
+</style>
