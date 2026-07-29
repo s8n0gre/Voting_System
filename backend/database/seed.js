@@ -5,8 +5,8 @@ import { fileURLToPath } from 'url';
 import { createSchema } from './schema.js';
 import { query, closePool } from './connection.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.join(__dirname, '..', '.env') });
+const _dbDir = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(_dbDir, '.env') });
 
 async function seed() {
   await createSchema();
@@ -95,7 +95,7 @@ async function seed() {
   // ══════════════════════════════════════════════════════════
   // STUDENTS — imported from List.csv
   // ══════════════════════════════════════════════════════════
-  const csvPath = path.join(__dirname, '..', '..', 'List.csv');
+  const csvPath = path.join(_dbDir, '..', '..', 'List.csv');
   const csvContent = fs.readFileSync(csvPath, 'utf-8');
   const lines = csvContent.trim().split('\n');
 
