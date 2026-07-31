@@ -67,6 +67,11 @@ export interface ApiError {
   code?: string;
 }
 
+export interface AuthResponse {
+  message?: string;
+  name?: string;
+}
+
 // ─────────────────────────────────────────────────────────────
 // Core fetch wrapper
 // ─────────────────────────────────────────────────────────────
@@ -111,6 +116,22 @@ async function apiFetch<T>(
 // ─────────────────────────────────────────────────────────────
 // API Methods
 // ─────────────────────────────────────────────────────────────
+
+/** POST /register — create an account with an institutional email */
+export async function registerUser(email: string, password: string): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/register", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+/** POST /login — sign in with email + password */
+export async function loginUser(email: string, password: string): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
 
 /** GET /roles — all executive candidates */
 export async function getRoles(): Promise<ExecutiveCandidate[]> {

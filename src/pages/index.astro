@@ -459,7 +459,7 @@ import { Toast } from "../components/Toast";
     margin: 0;
     padding: 0;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.625rem;
   }
   .supporting-roles-row li { display: flex; }
@@ -509,7 +509,7 @@ import { Toast } from "../components/Toast";
     .corner-icon-top-right { right: 0.5rem; }
     .corner-icon-bottom { width: 3rem; height: 3rem; }
     .wrap { gap: 1rem; }
-    .supporting-roles-row { grid-template-columns: repeat(2, 1fr); }
+    .supporting-roles-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 
   @media (max-width: 360px) {

@@ -10,7 +10,7 @@ dotenv.config({ path: path.join(_seedDir, '..', '.env') });
 async function seed() {
   const tables = ['NomineeVotes', 'Nominations', 'Votes', 'SupportingCandidates', 'SupportingRoles', 'ExecutiveCandidates', 'Users', 'Students'];
   for (const t of tables) {
-    const { error } = await supabase.from(t).delete().neq('id', 0);
+    const { error } = await supabase.from(t).delete().neq(t === 'Students' ? 'rollNo' : 'id', 0);
     if (error) console.error(`  Failed to clear ${t}:`, error.message);
   }
 
@@ -48,42 +48,42 @@ async function seed() {
   const clId = await insertExec('Mohan K', 'Community Lead', null, '23eea33@karpagamtech.ac.in');
   const cmlId = await insertExec('Navaneetha Krishnan C', 'Creative & Media Lead', '/images/navaneetha_krishnan.jpg', '717823y132@kce.ac.in');
 
-  await insertRole(presId, "President's Supporting Member",
+  const presRoleId = await insertRole(presId, "President's Supporting Member",
     'Serve the President\'s office through three core functions: (1) Strategy — develop the annual roadmap, monitor community goals, track performance, and ensure alignment with the community\'s vision and mission. (2) Industry Relations — build relationships with faculty, alumni, industry professionals, and external communities; coordinate guest lectures, partnerships, and networking opportunities. (3) Executive Coordination — support executive meetings, coordinate with all leadership teams, follow up on decisions, and ensure smooth execution of strategic initiatives.');
 
-  await insertRole(vpId, "Vice President's Supporting Member",
+  const vpRoleId = await insertRole(vpId, "Vice President's Supporting Member",
     'Serve the Vice President\'s office through three core functions: (1) Operations — manage daily operations, coordinate inter-team activities, monitor task completion, and ensure events and projects are executed on time. (2) Project Coordination — oversee technical and community projects, assign responsibilities, monitor milestones, and maintain project documentation. (3) Resource Management — manage event logistics, lab resources, budgets, inventory, and operational requirements for community activities.');
 
-  await insertRole(secId, "Secretary's Supporting Member",
+  const secRoleId = await insertRole(secId, "Secretary's Supporting Member",
     'Serve the Secretary\'s office through three core functions: (1) Administration — manage official records, attendance, member registration, and administrative activities. (2) Documentation — prepare meeting minutes, reports, proposals, newsletters, and maintain the community knowledge repository. (3) Communication — handle official announcements, email communications, notices, and internal coordination between members and leadership.');
 
-  await insertRole(tlId, "Technical Lead's Supporting Member",
+  const tlRoleId = await insertRole(tlId, "Technical Lead's Supporting Member",
     'Serve the Technical Lead\'s office through three core functions: (1) Learning — organize technical workshops, bootcamps, certification sessions, and mentoring programs. (2) Project Development — lead application development, hackathons, innovation challenges, and technical collaboration among members. (3) AI & Automation — drive AI initiatives, workflow automation, research on emerging technologies, and platform innovation.');
 
-  await insertRole(clId, "Community Lead's Supporting Member",
+  const clRoleId = await insertRole(clId, "Community Lead's Supporting Member",
     'Serve the Community Lead\'s office through three core functions: (1) Events — plan and execute workshops, seminars, competitions, community meetups, and flagship events. (2) Engagement — increase member participation, manage social media, run campaigns, recruit volunteers, and strengthen community engagement. (3) Partnerships — coordinate collaborations with student clubs, alumni, faculty, and industry organizations while expanding the community network.');
 
-  await insertRole(cmlId, "Creative & Media Lead's Supporting Member",
+  const cmlRoleId = await insertRole(cmlId, "Creative & Media Lead's Supporting Member",
     'Serve the Creative & Media Lead\'s office through three core functions: (1) Creative Design — design posters, banners, certificates, presentations, and all visual assets for community initiatives. (2) Media Production — capture and edit event photography, videography, promotional videos, and highlight reels. (3) Branding — maintain the community\'s brand identity, content standards, creative templates, and visual consistency across all platforms.');
 
-  await insertCandidate(1, 'Aditya Ramesh');
-  await insertCandidate(1, 'Bhavana Suresh');
-  await insertCandidate(1, 'Charan Kumar');
-  await insertCandidate(2, 'Janani Sundaram');
-  await insertCandidate(2, 'Karan Bhatia');
-  await insertCandidate(2, 'Lavanya Krishnan');
-  await insertCandidate(3, 'Tamil Selvan');
-  await insertCandidate(3, 'Uma Maheswari');
-  await insertCandidate(3, 'Vignesh Babu');
-  await insertCandidate(4, 'Deepika Raj');
-  await insertCandidate(4, 'Elango S');
-  await insertCandidate(4, 'Farida Banu');
-  await insertCandidate(5, 'Manikandan S');
-  await insertCandidate(5, 'Nandhini G');
-  await insertCandidate(5, 'Prashanth T');
-  await insertCandidate(6, 'Xavier Raj');
-  await insertCandidate(6, 'Yazhini S');
-  await insertCandidate(6, 'Zeenat Ara');
+  await insertCandidate(presRoleId, 'Aditya Ramesh');
+  await insertCandidate(presRoleId, 'Bhavana Suresh');
+  await insertCandidate(presRoleId, 'Charan Kumar');
+  await insertCandidate(vpRoleId, 'Janani Sundaram');
+  await insertCandidate(vpRoleId, 'Karan Bhatia');
+  await insertCandidate(vpRoleId, 'Lavanya Krishnan');
+  await insertCandidate(secRoleId, 'Tamil Selvan');
+  await insertCandidate(secRoleId, 'Uma Maheswari');
+  await insertCandidate(secRoleId, 'Vignesh Babu');
+  await insertCandidate(tlRoleId, 'Deepika Raj');
+  await insertCandidate(tlRoleId, 'Elango S');
+  await insertCandidate(tlRoleId, 'Farida Banu');
+  await insertCandidate(clRoleId, 'Manikandan S');
+  await insertCandidate(clRoleId, 'Nandhini G');
+  await insertCandidate(clRoleId, 'Prashanth T');
+  await insertCandidate(cmlRoleId, 'Xavier Raj');
+  await insertCandidate(cmlRoleId, 'Yazhini S');
+  await insertCandidate(cmlRoleId, 'Zeenat Ara');
 
   const csvPath = path.join(_seedDir, '..', '..', 'List.csv');
   const csvContent = fs.readFileSync(csvPath, 'utf-8');

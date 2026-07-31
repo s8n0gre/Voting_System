@@ -39,6 +39,24 @@ export function validateInstitutionalEmail(email: string): {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Password validation
+// ─────────────────────────────────────────────────────────────
+
+export function validatePassword(password: string): {
+  valid: boolean;
+  error?: string;
+} {
+  if (!password) return { valid: false, error: "Password is required." };
+  if (password.length < 6)
+    return { valid: false, error: "Password must be at least 6 characters." };
+  return { valid: true };
+}
+
+export function validatePasswordMatch(password: string, confirm: string): boolean {
+  return password === confirm;
+}
+
+// ─────────────────────────────────────────────────────────────
 // Session helpers (client-side only)
 // ─────────────────────────────────────────────────────────────
 

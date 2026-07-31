@@ -3,7 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import { Toast } from "../components/Toast";
 ---
 
-<BaseLayout title="Sign In" description="Sign in with your institutional email to cast your vote for the SNOW Campus Community elections">
+<BaseLayout title="Create Account" description="Register with your institutional email to vote for the SNOW Campus Community elections">
   <Toast client:load />
 
   <main id="main-content">
@@ -15,8 +15,8 @@ import { Toast } from "../components/Toast";
           </div>
           <span class="gate-logo-text">SNOW</span>
         </div>
-        <h1 class="gate-title">Welcome to SNOW Campus Community Elections</h1>
-        <p class="gate-subtitle">Sign in with your institutional email and password to cast your vote for the 2026 - 2027 coordinators.</p>
+        <h1 class="gate-title">Create Your Account</h1>
+        <p class="gate-subtitle">Register with your institutional email to vote for the 2026 - 2027 coordinators. Only emails in the official student list can register.</p>
         <form id="gate-form" class="gate-form" novalidate>
           <label for="gate-email" class="gate-label">Institutional Email</label>
           <input
@@ -33,23 +33,30 @@ import { Toast } from "../components/Toast";
             id="gate-password"
             class="input-field"
             type="password"
-            placeholder="Your password"
+            placeholder="At least 6 characters"
             required
-            autocomplete="current-password"
+            autocomplete="new-password"
           />
-          <p id="gate-notice" class="gate-notice" role="status"></p>
+          <label for="gate-confirm" class="gate-label">Confirm Password</label>
+          <input
+            id="gate-confirm"
+            class="input-field"
+            type="password"
+            placeholder="Re-enter your password"
+            required
+            autocomplete="new-password"
+          />
           <p id="gate-error" class="gate-error" role="alert"></p>
           <button type="submit" class="btn-primary gate-submit">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M9 11l3 3L22 4"/>
               <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
             </svg>
-            Sign In to Vote
+            Create Account
           </button>
         </form>
-        <p class="gate-note">Only <strong>@kce.ac.in</strong> and <strong>@karpagamtech.ac.in</strong> emails are allowed.</p>
         <p class="gate-note">
-          Don't have an account? <a href="/register" class="gate-link">Register here</a>
+          Already have an account? <a href="/login" class="gate-link">Sign in here</a>
         </p>
       </div>
     </div>
@@ -57,46 +64,58 @@ import { Toast } from "../components/Toast";
 </BaseLayout>
 
 <script>
-  import { setSessionEmail, setSessionName, getSessionEmail, validateInstitutionalEmail } from "../lib/auth";
-  import { loginUser } from "../lib/api";
+  import { getSessionEmail, validateInstitutionalEmail, validatePassword, validatePasswordMatch } from "../lib/auth";
+  import { verifyStudentEmail, registerUser } from "../lib/api";
 
-  const email = getSessionEmail();
-  if (email) {
+  const sessionEmail = getSessionEmail();
+  if (sessionEmail) {
     window.location.href = "/";
   }
 
   const form  = document.getElementById("gate-form") as HTMLFormElement;
-  const input = document.getElementById("gate-email") as HTMLInputElement;
+  const email = document.getElementById("gate-email") as HTMLInputElement;
   const password = document.getElementById("gate-password") as HTMLInputElement;
+  const confirm = document.getElementById("gate-confirm") as HTMLInputElement;
   const error = document.getElementById("gate-error")!;
-  const notice = document.getElementById("gate-notice");
-
-  const params = new URLSearchParams(window.location.search);
-  if (params.get("registered") === "1" && notice) {
-    notice.textContent = "Account created! Please sign in with your new password.";
-  }
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     error.textContent = "";
-    if (notice) notice.textContent = "";
     const submitBtn = form.querySelector(".gate-submit")!;
     submitBtn.setAttribute("disabled", "true");
 
-    const result = validateInstitutionalEmail(input.value);
-    if (!result.valid) {
-      error.textContent = result.error ?? "Invalid email.";
+    const emailCheck = validateInstitutionalEmail(email.value);
+    if (!emailCheck.valid) {
+      error.textContent = emailCheck.error ?? "Invalid email.";
+      submitBtn.removeAttribute("disabled");
+      return;
+    }
+
+    const passCheck = validatePassword(password.value);
+    if (!passCheck.valid) {
+      error.textContent = passCheck.error ?? "Invalid password.";
+      submitBtn.removeAttribute("disabled");
+      return;
+    }
+
+    if (!validatePasswordMatch(password.value, confirm.value)) {
+      error.textContent = "Passwords do not match.";
       submitBtn.removeAttribute("disabled");
       return;
     }
 
     try {
-      const res = await loginUser(input.value, password.value);
-      setSessionEmail(input.value);
-      setSessionName(res.name || input.value.split("@")[0]);
-      window.location.href = "/";
+      const res = await verifyStudentEmail(email.value);
+      if (!res.exists) {
+        error.textContent = "This email is not in the registered student list. Please use your official college email.";
+        submitBtn.removeAttribute("disabled");
+        return;
+      }
+
+      await registerUser(email.value, password.value);
+      window.location.href = "/login?registered=1";
     } catch (err) {
-      error.textContent = err instanceof Error ? err.message : "Unable to sign in. Please try again.";
+      error.textContent = err instanceof Error ? err.message : "Unable to register. Please try again.";
       submitBtn.removeAttribute("disabled");
     }
   });
@@ -194,13 +213,6 @@ import { Toast } from "../components/Toast";
     margin: 0;
   }
 
-  .gate-notice {
-    min-height: 1.25rem;
-    font-size: 0.82rem;
-    color: #4ade80;
-    margin: 0;
-  }
-
   .gate-submit {
     justify-content: center;
     padding: 0.75rem 1.5rem;
@@ -209,13 +221,10 @@ import { Toast } from "../components/Toast";
   }
 
   .gate-note {
-    font-size: 0.72rem;
+    font-size: 0.78rem;
     color: var(--text-muted);
     margin: 0;
     line-height: 1.5;
-  }
-  .gate-note strong {
-    color: var(--text-secondary);
   }
 
   .gate-link {

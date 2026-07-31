@@ -6,6 +6,7 @@
 CREATE TABLE IF NOT EXISTS "Users" (
   "id" SERIAL PRIMARY KEY,
   "email" TEXT UNIQUE NOT NULL,
+  "password" TEXT,
   "hasVoted" INTEGER DEFAULT 0,
   "votedAt" TEXT
 );
