@@ -1,54 +1,86 @@
-import { query } from '../database/connection.js';
+import { supabase } from '../database/supabase.js';
 
 export async function getAllExecutiveCandidates() {
-  const result = await query('SELECT * FROM "ExecutiveCandidates"');
-  return result.rows;
+  const { data, error } = await supabase.from('ExecutiveCandidates').select('*');
+  if (error) throw error;
+  return data;
 }
 
 export async function getSupportingRolesByExecutive(executiveCandidateId) {
-  const result = await query('SELECT * FROM "SupportingRoles" WHERE "executiveCandidateId" = $1', [executiveCandidateId]);
-  return result.rows;
+  const { data, error } = await supabase
+    .from('SupportingRoles')
+    .select('*')
+    .eq('executiveCandidateId', executiveCandidateId);
+  if (error) throw error;
+  return data;
 }
 
 export async function getSupportingRoleById(roleId) {
-  const result = await query('SELECT * FROM "SupportingRoles" WHERE "id" = $1', [roleId]);
-  return result.rows[0];
-}
-
-export async function getSupportingCandidates(supportingRoleId) {
-  const result = await query('SELECT * FROM "SupportingCandidates" WHERE "supportingRoleId" = $1', [supportingRoleId]);
-  return result.rows;
+  const { data, error } = await supabase
+    .from('SupportingRoles')
+    .select('*')
+    .eq('id', roleId)
+    .single();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || null;
 }
 
 export async function getExecutiveCandidateById(id) {
-  const result = await query('SELECT * FROM "ExecutiveCandidates" WHERE "id" = $1', [id]);
-  return result.rows[0];
+  const { data, error } = await supabase
+    .from('ExecutiveCandidates')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || null;
 }
 
 export async function getSupportingCandidateById(id) {
-  const result = await query('SELECT * FROM "SupportingCandidates" WHERE "id" = $1', [id]);
-  return result.rows[0];
+  const { data, error } = await supabase
+    .from('SupportingCandidates')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || null;
+}
+
+export async function getCandidatesBySupportingRole(supportingRoleId) {
+  const { data, error } = await supabase
+    .from('SupportingCandidates')
+    .select('*')
+    .eq('supportingRoleId', supportingRoleId);
+  if (error) throw error;
+  return data;
 }
 
 export async function getStudentByEmail(email) {
-  const result = await query('SELECT * FROM "Students" WHERE LOWER("email") = $1', [email.toLowerCase()]);
-  return result.rows[0];
+  const { data, error } = await supabase
+    .from('Students')
+    .select('*')
+    .eq('email', email.toLowerCase())
+    .maybeSingle();
+  if (error) throw error;
+  return data || null;
 }
 
 export async function getStudents(search) {
+  let query = supabase.from('Students').select('*').order('name');
   if (search) {
-    const result = await query(
-      'SELECT * FROM "Students" WHERE LOWER("name") LIKE $1 OR LOWER("email") LIKE $1 ORDER BY "name"',
-      [`%${search.toLowerCase()}%`]
-    );
-    return result.rows;
+    const pattern = `%${search.toLowerCase()}%`;
+    query = query.or(`name.ilike.${pattern},email.ilike.${pattern}`);
   }
-  const result = await query('SELECT * FROM "Students" ORDER BY "name"');
-  return result.rows;
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
 }
 
 export async function getVoterStatus(email) {
-  const result = await query('SELECT "hasVoted" FROM "Users" WHERE "email" = $1', [email]);
-  const user = result.rows[0];
-  return { hasVoted: user ? !!user.hasVoted : false };
+  const { data, error } = await supabase
+    .from('Users')
+    .select('hasVoted')
+    .eq('email', email.toLowerCase())
+    .maybeSingle();
+  if (error) throw error;
+  return { hasVoted: data ? !!data.hasVoted : false };
 }

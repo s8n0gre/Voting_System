@@ -5,55 +5,19 @@ import Footer from "../components/Footer.astro";
 import { Toast } from "../components/Toast";
 ---
 
-<BaseLayout title="SNOW Campus Community Elections" description="Cast your vote for the SNOW Campus Community elections — sign in with your institutional email to begin">
+<BaseLayout title="SNOW Campus Community Elections" description="Cast your vote for the SNOW Campus Community elections">
 
   <Navbar />
   <Toast client:load />
 
   <main id="main-content">
 
-    <img src="/images/Infinity.png" alt="" class="watermark" aria-hidden="true" />
+    <img src="/images/Infinity.png" alt="" class="watermark" aria-hidden="true" loading="lazy" />
 
-    <!-- ── Email Gate (shown when not logged in) ───────────── -->
-    <div id="email-gate" class="gate-overlay">
-      <div class="gate-card glass-card">
-        <div class="gate-logo">
-          <div class="gate-logo-icon" aria-hidden="true">
-            <img src="/snow-logo.png" alt="" class="gate-logo-img" />
-          </div>
-          <span class="gate-logo-text">SNOW</span>
-        </div>
-        <h1 class="gate-title">Welcome to SNOW Campus Community Elections</h1>
-        <p class="gate-subtitle">Sign in with your institutional email to cast your vote for the 2026 - 2027 coordinators.</p>
-        <form id="gate-form" class="gate-form" novalidate>
-          <label for="gate-email" class="gate-label">Institutional Email</label>
-          <input
-            id="gate-email"
-            class="input-field"
-            type="email"
-            placeholder="you@kce.ac.in"
-            required
-            autocomplete="email"
-            autofocus
-          />
-          <p id="gate-error" class="gate-error" role="alert"></p>
-          <button type="submit" class="btn-primary gate-submit">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M9 11l3 3L22 4"/>
-              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-            </svg>
-            Sign In to Vote
-          </button>
-        </form>
-        <p class="gate-note">Only <strong>@kce.ac.in</strong> and <strong>@karpagamtech.ac.in</strong> emails are allowed.</p>
-      </div>
-    </div>
+    <div class="page-wrapper">
 
-    <!-- ── App Content (shown after login) ─────────────────── -->
-    <div id="app-content" class="page-wrapper">
-
-      <img src="/images/rocket.png" alt="" class="corner-icon" aria-hidden="true" />
-      <img src="/images/1.png" alt="" class="corner-icon-top-right" aria-hidden="true" />
+      <img src="/images/rocket.png" alt="" class="corner-icon" aria-hidden="true" loading="lazy" />
+      <img src="/images/1.png" alt="" class="corner-icon-top-right" aria-hidden="true" loading="lazy" />
 
       <div class="page-title">
         <strong>SNOW Campus Community Elections</strong>
@@ -65,13 +29,14 @@ import { Toast } from "../components/Toast";
 
       <div class="wrap">
 
-        <article class="candidate-card glass-card" data-exec-id="1" data-exec-name="Nithish Kanna D">
+        <article class="candidate-card glass-card" data-exec-id="31" data-exec-name="Nithish Kanna D" data-exec-role="President">
+          <div class="card-cover" style="background-image: url('/images/cover-president.jpg');"></div>
           <div class="card-header">
             <span class="badge">President</span>
           </div>
           <div class="card-profile">
           <div class="avatar-wrap">
-            <img src="/images/nithish_kanna.jpg" alt="Nithish Kanna D" class="avatar-img" />
+            <img src="/images/nithish_kanna.jpg" alt="Nithish Kanna D" class="avatar-img" width="110" height="110" loading="lazy" />
           </div>
           <h2 class="candidate-name">Nithish Kanna D</h2>
           </div>
@@ -85,13 +50,14 @@ import { Toast } from "../components/Toast";
           </div>
         </article>
 
-        <article class="candidate-card glass-card" data-exec-id="2" data-exec-name="Deborshi Kashyap">
+        <article class="candidate-card glass-card" data-exec-id="32" data-exec-name="Deborshi Kashyap" data-exec-role="Vice President">
+          <div class="card-cover" style="background-image: url('/images/cover-vice-president.jpg');"></div>
           <div class="card-header">
             <span class="badge">Vice President</span>
           </div>
           <div class="card-profile">
           <div class="avatar-wrap">
-            <img src="/images/deborshi_kashyap.jpg" alt="Deborshi Kashyap" class="avatar-img" />
+            <img src="/images/deborshi_kashyap.jpg" alt="Deborshi Kashyap" class="avatar-img" width="110" height="110" loading="lazy" />
           </div>
           <h2 class="candidate-name">Deborshi Kashyap</h2>
           </div>
@@ -105,7 +71,8 @@ import { Toast } from "../components/Toast";
           </div>
         </article>
 
-        <article class="candidate-card glass-card disabled" data-exec-id="3" data-exec-name="Srikeerthi C B">
+        <article class="candidate-card glass-card disabled" data-exec-id="33" data-exec-name="Srikeerthi C B" data-exec-role="Secretary">
+          <div class="card-cover" style="background-image: url('/images/cover-secretary.jpg');"></div>
           <div class="card-header">
             <span class="badge">Secretary</span>
             <span class="lock-badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Locked</span>
@@ -126,13 +93,14 @@ import { Toast } from "../components/Toast";
           </div>
         </article>
 
-        <article class="candidate-card glass-card" data-exec-id="4" data-exec-name="Yuvaraj E">
+        <article class="candidate-card glass-card" data-exec-id="34" data-exec-name="Yuvaraj E" data-exec-role="Technical Lead">
+          <div class="card-cover" style="background-image: url('/images/cover-technical-lead.jpg');"></div>
           <div class="card-header">
             <span class="badge">Technical Lead</span>
           </div>
           <div class="card-profile">
           <div class="avatar-wrap">
-            <img src="/images/yuvaraj.jpg" alt="Yuvaraj E" class="avatar-img" />
+            <img src="/images/yuvaraj.jpg" alt="Yuvaraj E" class="avatar-img" width="110" height="110" loading="lazy" />
           </div>
           <h2 class="candidate-name">Yuvaraj E</h2>
           </div>
@@ -146,7 +114,8 @@ import { Toast } from "../components/Toast";
           </div>
         </article>
 
-        <article class="candidate-card glass-card disabled" data-exec-id="5" data-exec-name="Mohan K">
+        <article class="candidate-card glass-card disabled" data-exec-id="35" data-exec-name="Mohan K" data-exec-role="Community Lead">
+          <div class="card-cover" style="background-image: url('/images/cover-community-lead.jpg');"></div>
           <div class="card-header">
             <span class="badge">Community Lead</span>
             <span class="lock-badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Locked</span>
@@ -167,13 +136,14 @@ import { Toast } from "../components/Toast";
           </div>
         </article>
 
-        <article class="candidate-card glass-card" data-exec-id="6" data-exec-name="Navaneetha Krishnan C">
+        <article class="candidate-card glass-card" data-exec-id="36" data-exec-name="Navaneetha Krishnan C" data-exec-role="Creative & Media Lead">
+          <div class="card-cover" style="background-image: url('/images/cover-creative-media-lead.jpg');"></div>
           <div class="card-header">
             <span class="badge">Creative & Media Lead</span>
           </div>
           <div class="card-profile">
           <div class="avatar-wrap">
-            <img src="/images/navaneetha_krishnan.jpg" alt="Navaneetha Krishnan C" class="avatar-img" />
+            <img src="/images/navaneetha_krishnan.jpg" alt="Navaneetha Krishnan C" class="avatar-img" width="110" height="110" loading="lazy" />
           </div>
           <h2 class="candidate-name">Navaneetha Krishnan C</h2>
           </div>
@@ -189,7 +159,7 @@ import { Toast } from "../components/Toast";
 
       </div>
 
-      <img src="/images/wf-ui-highlight-effect.avif" alt="" class="corner-icon-bottom" aria-hidden="true" />
+      <img src="/images/wf-ui-highlight-effect.avif" alt="" class="corner-icon-bottom" aria-hidden="true" loading="lazy" />
       <div id="role-tooltip" class="role-tooltip"></div>
     </div>
 
@@ -200,56 +170,15 @@ import { Toast } from "../components/Toast";
 </BaseLayout>
 
 <script>
-  import { setSessionEmail, setSessionName, getSessionEmail, validateInstitutionalEmail } from "../lib/auth";
-  import { verifyStudentEmail } from "../lib/api";
+  import { getSessionEmail } from "../lib/auth";
 
   function init() {
-    const gateEl = document.getElementById("email-gate")!;
-    const appEl  = document.getElementById("app-content")!;
-
-    // Already logged in?
     const email = getSessionEmail();
-    if (email) {
-      gateEl.style.display = "none";
-      appEl.style.display   = "block";
-      bindRoleCards();
+    if (!email) {
+      window.location.href = "/login";
       return;
     }
-
-    // Gate form handler
-    const form  = document.getElementById("gate-form") as HTMLFormElement;
-    const input = document.getElementById("gate-email") as HTMLInputElement;
-    const error = document.getElementById("gate-error")!;
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      error.textContent = "";
-
-      // 1. Validate format / domain
-      const result = validateInstitutionalEmail(input.value);
-      if (!result.valid) {
-        error.textContent = result.error ?? "Invalid email.";
-        return;
-      }
-
-      // 2. Check against Students table
-      let studentName = "";
-      try {
-        const res = await verifyStudentEmail(input.value);
-        if (!res.exists) {
-          error.textContent = "This email is not registered in the voter list.";
-          return;
-        }
-        studentName = res.student?.name || input.value.split("@")[0];
-      } catch {
-        error.textContent = "Unable to verify email. Please try again.";
-        return;
-      }
-
-      setSessionEmail(input.value);
-      setSessionName(studentName);
-      window.location.reload();
-    });
+    bindRoleCards();
   }
 
   const responsibilities: Record<string, string> = {
@@ -377,7 +306,14 @@ import { Toast } from "../components/Toast";
     text-align: center;
     color: var(--text-secondary);
     font-size: 0.85rem;
-    margin-bottom: 2rem;
+    margin: 0 auto 2rem;
+    max-width: 720px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 1rem;
+    padding: 1.5rem 2rem;
   }
 
   .page-title strong {
@@ -388,122 +324,6 @@ import { Toast } from "../components/Toast";
     margin-bottom: 0.4rem;
   }
 
-  /* ── Email Gate ────────────────────────────────────────────── */
-  .gate-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 200;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(10, 17, 24, 0.75);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    padding: 1.5rem;
-  }
-
-  .gate-card {
-    max-width: 420px;
-    width: 100%;
-    padding: 2.5rem 2rem;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    animation: fadeUp 0.5s ease forwards;
-  }
-
-  .gate-logo {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.6rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .gate-logo-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, var(--accent) 0%, #6d28d9 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    flex-shrink: 0;
-  }
-  .gate-logo-img {
-    width: 28px;
-    height: 28px;
-    object-fit: contain;
-    filter: drop-shadow(0 2px 10px rgba(108, 211, 54, 0.4));
-  }
-
-  .gate-logo-text {
-    font-size: 1.6rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    background: linear-gradient(135deg, var(--accent-light) 0%, #c4b5fd 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .gate-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0;
-    letter-spacing: -0.02em;
-  }
-
-  .gate-subtitle {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    line-height: 1.6;
-    margin: 0;
-  }
-
-  .gate-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    text-align: left;
-    margin-top: 0.5rem;
-  }
-
-  .gate-label {
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    letter-spacing: 0.03em;
-  }
-
-  .gate-error {
-    min-height: 1.25rem;
-    font-size: 0.8rem;
-    color: #fb7185;
-    margin: 0;
-  }
-
-  .gate-submit {
-    justify-content: center;
-    padding: 0.75rem 1.5rem;
-    font-size: 0.95rem;
-    margin-top: 0.25rem;
-  }
-
-  .gate-note {
-    font-size: 0.72rem;
-    color: var(--text-muted);
-    margin: 0;
-    line-height: 1.5;
-  }
-  .gate-note strong {
-    color: var(--text-secondary);
-  }
-
-  /* ── Role Confirmation Modal ────────────────────────────── */
   /* ── Candidate Card Layout ─────────────────────────────────── */
   .wrap {
     display: flex;
@@ -523,7 +343,29 @@ import { Toast } from "../components/Toast";
     max-width: 100%;
   }
 
-  .card-header { display: flex; justify-content: flex-start; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .card-cover {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 55%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 0;
+    border-radius: 1rem 1rem 0 0;
+    opacity: 0.85;
+  }
+
+  .card-header { 
+    display: flex; 
+    justify-content: flex-start; 
+    align-items: center; 
+    gap: 0.5rem; 
+    flex-wrap: wrap; 
+    position: relative;
+    z-index: 1;
+  }
 
   .lock-badge {
     display: inline-flex;
@@ -556,6 +398,8 @@ import { Toast } from "../components/Toast";
     align-items: center;
     gap: 0.875rem;
     text-align: center;
+    position: relative;
+    z-index: 1;
   }
 
   .avatar-wrap { position: relative; width: 110px; height: 110px; }
@@ -586,11 +430,20 @@ import { Toast } from "../components/Toast";
   .candidate-name {
     font-size: 1.35rem;
     font-weight: 700;
-    color: var(--text-primary);
+    color: #fff;
     margin: 0;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 100%);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
   }
 
-  .supporting-roles-section { border-top: 1px solid var(--border-color); padding-top: 1rem; }
+  .supporting-roles-section { 
+    border-top: 1px solid var(--border-color); 
+    padding-top: 1rem; 
+    position: relative;
+    z-index: 1;
+  }
 
   .supporting-roles-label {
     font-size: 0.78rem;
@@ -628,14 +481,14 @@ import { Toast } from "../components/Toast";
     aspect-ratio: 4 / 3;
   }
   .role-card:hover {
-    background: var(--accent-glow);
-    border-color: var(--border-hover);
+    background: var(--accent);
+    border-color: var(--accent);
     transform: translateY(-3px);
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
   }
 
   .role-icon { color: var(--text-muted); opacity: 0.6; transition: all 0.2s ease; }
-  .role-card:hover .role-icon { color: var(--accent-light); opacity: 1; }
+  .role-card:hover .role-icon { color: #fff; opacity: 1; }
 
   .role-title {
     font-size: 0.85rem;
@@ -644,10 +497,24 @@ import { Toast } from "../components/Toast";
     transition: color 0.2s ease;
     line-height: 1.3;
   }
-  .role-card:hover .role-title { color: var(--accent-light); }
+  .role-card:hover .role-title { color: #fff; }
 
-  @media (max-width: 380px) {
+  @media (max-width: 640px) {
+    #main-content { padding: 2rem 1rem; }
+    .page-title { margin-bottom: 1.5rem; padding: 1.25rem 1.25rem; }
+    .page-title strong { font-size: 1rem; }
+    .candidate-card { padding: 1.25rem; }
+    .corner-icon,
+    .corner-icon-top-right { width: 5rem; height: 5rem; top: 0.5rem; }
+    .corner-icon-top-right { right: 0.5rem; }
+    .corner-icon-bottom { width: 3rem; height: 3rem; }
+    .wrap { gap: 1rem; }
     .supporting-roles-row { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 360px) {
+    .supporting-roles-row { gap: 0.5rem; }
+    .role-card { padding: 0.85rem 0.5rem; }
   }
 
   .role-tooltip {

@@ -6,7 +6,12 @@ let pool = null;
 
 function getPoolConfig() {
   const url = process.env.DATABASE_URL || 'postgresql://localhost:5432/voting_system';
-  const config = { connectionString: url };
+  const config = {
+    connectionString: url,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
+  };
   if (url.includes('supabase.co')) {
     config.ssl = { rejectUnauthorized: false };
   }

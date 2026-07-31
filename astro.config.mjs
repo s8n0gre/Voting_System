@@ -10,7 +10,12 @@ export default defineConfig({
     enabled: false,
   },
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    server: {
+      proxy: {
+        '/api': 'http://localhost:3001',
+      },
+    },
   },
 
   integrations: [react()]

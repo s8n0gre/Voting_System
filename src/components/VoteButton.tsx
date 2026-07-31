@@ -38,7 +38,7 @@ export function VoteButton({
     const email = getSessionEmail();
     if (!email) {
       showToast("Session expired. Please sign in again.", "error");
-      window.location.href = "/";
+      window.location.href = "/login";
       return;
     }
     if (!supportingCandidateId) {
@@ -67,7 +67,7 @@ export function VoteButton({
       markSessionVoted();
       setSubmitted(true);
       setShowModal(false);
-      showToast("Your vote has been recorded! 🎉", "success");
+      showToast("Your vote has been recorded!", "success");
 
       // Redirect after short delay
       setTimeout(() => {

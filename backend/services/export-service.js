@@ -1,6 +1,6 @@
 import ExcelJS from 'exceljs';
 import { getResults } from './vote-service.js';
-import { query } from '../database/connection.js';
+import { supabase } from '../database/supabase.js';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -43,14 +43,19 @@ export async function generateNominationsReport() {
 }
 
 export async function getNominationsReportBuffer() {
-  const nomsResult = await query(`
-    SELECT n.*, ec."name" AS "execName", ec."role" AS "execRole"
-    FROM "Nominations" n
-    JOIN "ExecutiveCandidates" ec ON ec."id" = n."executiveCandidateId"
-    ORDER BY n."executiveCandidateId", n."roleTitle", n."voteCount" DESC
-  `);
+  const { data: noms, error } = await supabase
+    .from('Nominations')
+    .select('*, ExecutiveCandidates(name, role)')
+    .order('executiveCandidateId')
+    .order('roleTitle')
+    .order('voteCount', { ascending: false });
+  if (error) throw error;
 
-  const noms = nomsResult.rows;
+  noms.forEach(n => {
+    n.execName = n.ExecutiveCandidates?.name || '';
+    n.execRole = n.ExecutiveCandidates?.role || '';
+    delete n.ExecutiveCandidates;
+  });
 
   const grouped = {};
   for (const n of noms) {

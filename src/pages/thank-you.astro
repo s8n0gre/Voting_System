@@ -82,7 +82,11 @@ import { Toast } from "../components/Toast";
 <script>
   import { getSessionEmail, getVoteSelection } from "../lib/auth";
 
-  // ── Show vote summary if we have selection data ─────────────
+  const sessionEmail = getSessionEmail();
+  if (!sessionEmail) {
+    window.location.href = "/login";
+  }
+
   const sel = getVoteSelection();
 
   if (sel.executiveCandidateName && sel.supportingCandidateName) {

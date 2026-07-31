@@ -8,6 +8,7 @@
     "seed": "node database/seed.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.111.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.0",
     "exceljs": "^4.4.0",

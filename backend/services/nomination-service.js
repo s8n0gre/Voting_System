@@ -1,23 +1,34 @@
-import { query } from '../database/connection.js';
+import { supabase } from '../database/supabase.js';
 
 async function isExecutiveForRole(email, execId) {
-  const result = await query('SELECT * FROM "ExecutiveCandidates" WHERE "id" = $1', [execId]);
-  const exec = result.rows[0];
-  if (!exec || !exec.email) return false;
-  return exec.email.toLowerCase() === email.toLowerCase();
+  const { data, error } = await supabase
+    .from('ExecutiveCandidates')
+    .select('email')
+    .eq('id', execId)
+    .single();
+  if (error || !data?.email) return false;
+  return data.email.toLowerCase() === email.toLowerCase();
 }
 
 export async function getNominations(execId, roleTitle) {
-  const result = await query(
-    'SELECT * FROM "Nominations" WHERE "executiveCandidateId" = $1 AND "roleTitle" = $2 ORDER BY "voteCount" DESC',
-    [execId, roleTitle]
-  );
-  return result.rows;
+  const { data, error } = await supabase
+    .from('Nominations')
+    .select('id, executiveCandidateId, roleTitle, studentEmail, studentName, voteCount')
+    .eq('executiveCandidateId', execId)
+    .eq('roleTitle', roleTitle)
+    .order('voteCount', { ascending: false });
+  if (error) throw error;
+  return data;
 }
 
 export async function getNominationById(id) {
-  const result = await query('SELECT * FROM "Nominations" WHERE "id" = $1', [id]);
-  return result.rows[0];
+  const { data, error } = await supabase
+    .from('Nominations')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || null;
 }
 
 export async function nominateSelf(execId, roleTitle, email, name) {
@@ -25,75 +36,100 @@ export async function nominateSelf(execId, roleTitle, email, name) {
     return { error: 'Executive leaders cannot nominate themselves for coordinator roles' };
   }
 
-  const existingUnderExec = await query(
-    'SELECT * FROM "Nominations" WHERE "executiveCandidateId" = $1 AND "studentEmail" = $2',
-    [execId, email]
-  );
-  if (existingUnderExec.rows[0]) {
+  const { data: existingUnderExec } = await supabase
+    .from('Nominations')
+    .select('id')
+    .eq('executiveCandidateId', execId)
+    .eq('studentEmail', email)
+    .maybeSingle();
+  if (existingUnderExec) {
     return { error: 'You can only nominate yourself for one role under this executive. Withdraw your existing nomination first.' };
   }
 
-  const existing = await query(
-    'SELECT * FROM "Nominations" WHERE "executiveCandidateId" = $1 AND "roleTitle" = $2 AND "studentEmail" = $3',
-    [execId, roleTitle, email]
-  );
-  if (existing.rows[0]) return { alreadyNominated: true, nomination: existing.rows[0] };
+  const { data: existing } = await supabase
+    .from('Nominations')
+    .select('id')
+    .eq('executiveCandidateId', execId)
+    .eq('roleTitle', roleTitle)
+    .eq('studentEmail', email)
+    .maybeSingle();
+  if (existing) return { alreadyNominated: true, nomination: existing };
 
-  await query(
-    'INSERT INTO "Nominations" ("executiveCandidateId", "roleTitle", "studentEmail", "studentName") VALUES ($1, $2, $3, $4)',
-    [execId, roleTitle, email, name]
-  );
+  const { error: insertErr } = await supabase
+    .from('Nominations')
+    .insert({ executiveCandidateId: execId, roleTitle, studentEmail: email, studentName: name });
+  if (insertErr) throw insertErr;
+
   return { alreadyNominated: false };
 }
 
 export async function withdrawNomination(nominationId, email) {
-  const nomResult = await query('SELECT * FROM "Nominations" WHERE "id" = $1', [nominationId]);
-  const nomination = nomResult.rows[0];
-  if (!nomination) return { error: 'Nomination not found' };
+  const { data: nomination, error: findErr } = await supabase
+    .from('Nominations')
+    .select('id, studentEmail')
+    .eq('id', nominationId)
+    .single();
+  if (findErr || !nomination) return { error: 'Nomination not found' };
   if (nomination.studentEmail.toLowerCase() !== email.toLowerCase()) {
     return { error: 'You can only withdraw your own nomination' };
   }
 
-  await query('DELETE FROM "NomineeVotes" WHERE "nominationId" = $1', [nominationId]);
-  await query('DELETE FROM "Nominations" WHERE "id" = $1', [nominationId]);
+  await supabase.from('NomineeVotes').delete().eq('nominationId', nominationId);
+  await supabase.from('Nominations').delete().eq('id', nominationId);
   return { success: true };
 }
 
 export async function getMyNominationsByExec(email, execId) {
-  const result = await query(
-    'SELECT * FROM "Nominations" WHERE "studentEmail" = $1 AND "executiveCandidateId" = $2',
-    [email, execId]
-  );
-  return result.rows;
+  const { data, error } = await supabase
+    .from('Nominations')
+    .select('*')
+    .eq('studentEmail', email)
+    .eq('executiveCandidateId', execId);
+  if (error) throw error;
+  return data;
 }
 
 export async function voteForNominee(voterEmail, nominationId) {
-  const nomResult = await query('SELECT * FROM "Nominations" WHERE "id" = $1', [nominationId]);
-  const nomination = nomResult.rows[0];
-  if (!nomination) return { error: 'Nomination not found' };
+  const { data: nomination, error: nomErr } = await supabase
+    .from('Nominations')
+    .select('id, executiveCandidateId, studentEmail')
+    .eq('id', nominationId)
+    .single();
+  if (nomErr || !nomination) return { error: 'Nomination not found' };
 
   if (await isExecutiveForRole(voterEmail, nomination.executiveCandidateId)) {
     return { error: 'Executive leaders cannot vote for their own coordinator roles' };
   }
 
-  const isSelf = nomination.studentEmail === voterEmail;
-  if (isSelf) return { error: 'You cannot vote for yourself' };
+  if (nomination.studentEmail === voterEmail) return { error: 'You cannot vote for yourself' };
 
-  const existingVote = await query(
-    'SELECT * FROM "NomineeVotes" WHERE "voterEmail" = $1 AND "nominationId" = $2',
-    [voterEmail, nominationId]
-  );
-  if (existingVote.rows[0]) return { error: 'You already voted for this candidate' };
+  const { data: existingVote } = await supabase
+    .from('NomineeVotes')
+    .select('id')
+    .eq('voterEmail', voterEmail)
+    .eq('nominationId', nominationId)
+    .maybeSingle();
+  if (existingVote) return { error: 'You already voted for this candidate' };
 
-  await query('INSERT INTO "NomineeVotes" ("voterEmail", "nominationId") VALUES ($1, $2)', [voterEmail, nominationId]);
-  await query('UPDATE "Nominations" SET "voteCount" = "voteCount" + 1 WHERE "id" = $1', [nominationId]);
+  await supabase.from('NomineeVotes').insert({ voterEmail, nominationId });
+  const { data: current } = await supabase
+    .from('Nominations')
+    .select('voteCount')
+    .eq('id', nominationId)
+    .single();
+  await supabase
+    .from('Nominations')
+    .update({ voteCount: (current?.voteCount || 0) + 1 })
+    .eq('id', nominationId);
+
   return { success: true };
 }
 
 export async function getVoterNominationStatus(email) {
-  const result = await query(
-    'SELECT "id", "executiveCandidateId", "roleTitle" FROM "Nominations" WHERE "studentEmail" = $1',
-    [email]
-  );
-  return result.rows;
+  const { data, error } = await supabase
+    .from('Nominations')
+    .select('id, executiveCandidateId, roleTitle')
+    .eq('studentEmail', email);
+  if (error) throw error;
+  return data;
 }

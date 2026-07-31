@@ -1,4 +1,4 @@
-import { query } from '../database/connection.js';
+import { supabase } from '../database/supabase.js';
 import { getExecutiveCandidateById, getSupportingCandidateById } from './role-service.js';
 
 function isValidInstitutionEmail(email) {
@@ -32,69 +32,88 @@ export async function castVote(email, executiveCandidateId, supportingCandidateI
     if (!supportingCandidate) {
       return { success: false, status: 400, error: 'Supporting candidate not found' };
     }
-    const roleResult = await query('SELECT * FROM "SupportingRoles" WHERE "id" = $1', [supportingCandidate.supportingRoleId]);
-    const role = roleResult.rows[0];
-    if (!role || role.executiveCandidateId !== executiveCandidateId) {
+    const { data: role, error: roleErr } = await supabase
+      .from('SupportingRoles')
+      .select('executiveCandidateId')
+      .eq('id', supportingCandidate.supportingRoleId)
+      .single();
+    if (roleErr || !role || role.executiveCandidateId !== executiveCandidateId) {
       return { success: false, status: 400, error: 'Supporting candidate does not belong to the selected executive' };
     }
   }
 
   if (supportingStudentRollNo) {
-    const studentResult = await query('SELECT * FROM "Students" WHERE "rollNo" = $1', [supportingStudentRollNo]);
-    const student = studentResult.rows[0];
+    const { data: student, error: studentErr } = await supabase
+      .from('Students')
+      .select('rollNo')
+      .eq('rollNo', supportingStudentRollNo)
+      .maybeSingle();
     if (!student) {
       return { success: false, status: 400, error: 'Student not found' };
     }
   }
 
-  const existingUser = await query('SELECT * FROM "Users" WHERE "email" = $1', [normalizedEmail]);
-  if (existingUser.rows[0] && existingUser.rows[0].hasVoted) {
+  const { data: existingUser } = await supabase
+    .from('Users')
+    .select('hasVoted')
+    .eq('email', normalizedEmail)
+    .maybeSingle();
+  if (existingUser?.hasVoted) {
     return { success: false, status: 409, error: 'You have already voted' };
   }
 
-  if (!existingUser.rows[0]) {
-    await query('INSERT INTO "Users" ("email", "hasVoted", "votedAt") VALUES ($1, 1, CURRENT_TIMESTAMP)', [normalizedEmail]);
-  } else {
-    await query('UPDATE "Users" SET "hasVoted" = 1, "votedAt" = CURRENT_TIMESTAMP WHERE "email" = $1', [normalizedEmail]);
+  const { error: upsertErr } = await supabase
+    .from('Users')
+    .upsert(
+      { email: normalizedEmail, hasVoted: 1, votedAt: new Date().toISOString() },
+      { onConflict: 'email', ignoreDuplicates: false }
+    );
+  if (upsertErr) {
+    return { success: false, status: 500, error: 'Failed to record vote' };
   }
 
-  await query(
-    'INSERT INTO "Votes" ("voterEmail", "executiveCandidateId", "supportingCandidateId", "supportingStudentRollNo", "supportingStudentName") VALUES ($1, $2, $3, $4, $5)',
-    [normalizedEmail, executiveCandidateId, supportingCandidateId || null, supportingStudentRollNo || null, supportingStudentName || null]
-  );
+  const { error: voteErr } = await supabase
+    .from('Votes')
+    .insert({
+      voterEmail: normalizedEmail,
+      executiveCandidateId,
+      supportingCandidateId: supportingCandidateId || null,
+      supportingStudentRollNo: supportingStudentRollNo || null,
+      supportingStudentName: supportingStudentName || null,
+    });
+  if (voteErr) {
+    return { success: false, status: 500, error: 'Failed to record vote' };
+  }
 
   return { success: true, status: 201, message: 'Vote recorded successfully' };
 }
 
 export async function getResults() {
-  const executiveResult = await query(`
-    SELECT ec."id", ec."name", ec."role", COUNT(v."id") AS votes
-    FROM "ExecutiveCandidates" ec
-    LEFT JOIN "Votes" v ON ec."id" = v."executiveCandidateId"
-    GROUP BY ec."id"
-    ORDER BY votes DESC
-  `);
+  const [
+    { data: execRows, error: execErr },
+    { data: suppRows, error: suppErr },
+    { data: studentRows, error: studentErr },
+  ] = await Promise.all([
+    supabase
+      .from('ExecutiveCandidates')
+      .select('id, name, role, votes:Votes(count)'),
+    supabase
+      .from('SupportingCandidates')
+      .select('id, name, role:SupportingRoles(title), votes:Votes(count)'),
+    supabase
+      .from('Students')
+      .select('rollNo, name, department, votes:Votes(count)')
+      .not('Votes.id', 'is', null),
+  ]);
 
-  const supportingResult = await query(`
-    SELECT sc."id", sc."name", sr."title" AS role, COUNT(v."id") AS votes
-    FROM "SupportingCandidates" sc
-    JOIN "SupportingRoles" sr ON sc."supportingRoleId" = sr."id"
-    LEFT JOIN "Votes" v ON sc."id" = v."supportingCandidateId"
-    GROUP BY sc."id"
-    ORDER BY votes DESC
-  `);
-
-  const studentResult = await query(`
-    SELECT s."rollNo", s."name", s."department", COUNT(v."id") AS votes
-    FROM "Students" s
-    JOIN "Votes" v ON s."rollNo" = v."supportingStudentRollNo"
-    GROUP BY s."rollNo"
-    ORDER BY votes DESC
-  `);
+  const mapRows = (rows) => (rows || []).map(r => ({
+    ...r,
+    votes: r.votes?.[0]?.count ?? 0,
+  }));
 
   return {
-    executiveResults: executiveResult.rows,
-    supportingResults: supportingResult.rows,
-    studentResults: studentResult.rows,
+    executiveResults: mapRows(execRows).sort((a, b) => b.votes - a.votes),
+    supportingResults: mapRows(suppRows).sort((a, b) => b.votes - a.votes),
+    studentResults: mapRows(studentRows || []).sort((a, b) => b.votes - a.votes),
   };
 }

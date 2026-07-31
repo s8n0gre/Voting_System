@@ -1,5 +1,19 @@
 const BASE = import.meta.env.PUBLIC_API_URL ?? "/api";
 
+const cache = new Map<string, { data: unknown; ts: number }>();
+const CACHE_TTL = 30_000;
+
+function getCached<T>(key: string): T | null {
+  const entry = cache.get(key);
+  if (entry && Date.now() - entry.ts < CACHE_TTL) return entry.data as T;
+  cache.delete(key);
+  return null;
+}
+
+function setCache(key: string, data: unknown) {
+  cache.set(key, { data, ts: Date.now() });
+}
+
 // ─────────────────────────────────────────────────────────────
 // Types (mirrors the DB contract)
 // ─────────────────────────────────────────────────────────────
@@ -61,6 +75,14 @@ async function apiFetch<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const isGet = !options.method || options.method === "GET";
+  const cacheKey = `${options.method || "GET"}:${path}`;
+
+  if (isGet) {
+    const cached = getCached<T>(cacheKey);
+    if (cached) return cached;
+  }
+
   const url = `${BASE}${path}`;
   const res = await fetch(url, {
     headers: {
@@ -81,7 +103,9 @@ async function apiFetch<T>(
     throw new Error(errMsg);
   }
 
-  return res.json() as Promise<T>;
+  const data = await res.json() as T;
+  if (isGet) setCache(cacheKey, data);
+  return data;
 }
 
 // ─────────────────────────────────────────────────────────────

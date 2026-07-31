@@ -1,0 +1,203 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { Toast } from "../components/Toast";
+---
+
+<BaseLayout title="Sign In" description="Sign in with your institutional email to cast your vote for the SNOW Campus Community elections">
+  <Toast client:load />
+
+  <main id="main-content">
+    <div class="gate-page">
+      <div class="gate-card glass-card">
+        <div class="gate-logo">
+          <div class="gate-logo-icon" aria-hidden="true">
+            <img src="/snow-logo.png" alt="" class="gate-logo-img" />
+          </div>
+          <span class="gate-logo-text">SNOW</span>
+        </div>
+        <h1 class="gate-title">Welcome to SNOW Campus Community Elections</h1>
+        <p class="gate-subtitle">Sign in with your institutional email to cast your vote for the 2026 - 2027 coordinators.</p>
+        <form id="gate-form" class="gate-form" novalidate>
+          <label for="gate-email" class="gate-label">Institutional Email</label>
+          <input
+            id="gate-email"
+            class="input-field"
+            type="email"
+            placeholder="you@kce.ac.in"
+            required
+            autocomplete="email"
+            autofocus
+          />
+          <p id="gate-error" class="gate-error" role="alert"></p>
+          <button type="submit" class="btn-primary gate-submit">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+            </svg>
+            Sign In to Vote
+          </button>
+        </form>
+        <p class="gate-note">Only <strong>@kce.ac.in</strong> and <strong>@karpagamtech.ac.in</strong> emails are allowed.</p>
+      </div>
+    </div>
+  </main>
+</BaseLayout>
+
+<script>
+  import { setSessionEmail, setSessionName, getSessionEmail, validateInstitutionalEmail } from "../lib/auth";
+  import { verifyStudentEmail } from "../lib/api";
+
+  const email = getSessionEmail();
+  if (email) {
+    window.location.href = "/";
+  }
+
+  const form  = document.getElementById("gate-form") as HTMLFormElement;
+  const input = document.getElementById("gate-email") as HTMLInputElement;
+  const error = document.getElementById("gate-error")!;
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    error.textContent = "";
+    form.querySelector(".gate-submit")!.setAttribute("disabled", "true");
+
+    const result = validateInstitutionalEmail(input.value);
+    if (!result.valid) {
+      error.textContent = result.error ?? "Invalid email.";
+      form.querySelector(".gate-submit")!.removeAttribute("disabled");
+      return;
+    }
+
+    try {
+      const res = await verifyStudentEmail(input.value);
+      if (!res.exists) {
+        error.textContent = "This email is not registered in the voter list.";
+        form.querySelector(".gate-submit")!.removeAttribute("disabled");
+        return;
+      }
+      const studentName = res.student?.name || input.value.split("@")[0];
+      setSessionEmail(input.value);
+      setSessionName(studentName);
+      window.location.href = "/";
+    } catch {
+      error.textContent = "Unable to verify email. Please try again.";
+      form.querySelector(".gate-submit")!.removeAttribute("disabled");
+    }
+  });
+</script>
+
+<style>
+  .gate-page {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+  }
+
+  .gate-card {
+    max-width: 420px;
+    width: 100%;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    animation: fadeUp 0.5s ease forwards;
+  }
+
+  .gate-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .gate-logo-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent) 0%, #6d28d9 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .gate-logo-img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 10px rgba(108, 211, 54, 0.4));
+  }
+
+  .gate-logo-text {
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    background: linear-gradient(135deg, var(--accent-light) 0%, #c4b5fd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gate-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    letter-spacing: -0.02em;
+  }
+
+  .gate-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .gate-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: left;
+    margin-top: 0.5rem;
+  }
+
+  .gate-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.03em;
+  }
+
+  .gate-error {
+    min-height: 1.25rem;
+    font-size: 0.8rem;
+    color: #fb7185;
+    margin: 0;
+  }
+
+  .gate-submit {
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
+    margin-top: 0.25rem;
+  }
+
+  .gate-note {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.5;
+  }
+  .gate-note strong {
+    color: var(--text-secondary);
+  }
+
+  @media (max-width: 480px) {
+    .gate-page { padding: 1.5rem 1rem; }
+    .gate-card { padding: 2rem 1.25rem; }
+    .gate-title { font-size: 1.1rem; }
+  }
+</style>

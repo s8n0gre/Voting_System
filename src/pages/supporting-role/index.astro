@@ -88,7 +88,7 @@ import { Toast } from "../../components/Toast";
   import { getRoles, getNominations, nominateSelf, voteNominee, getMyNominations, verifyStudentEmail, withdrawNomination } from "../../lib/api";
 
   const email = getSessionEmail();
-  if (!email) { window.location.href = "/"; }
+  if (!email) { window.location.href = "/login"; }
   if (getSessionVoted()) { window.location.href = "/thank-you"; }
 
   const params = new URLSearchParams(window.location.search);
@@ -129,18 +129,169 @@ import { Toast } from "../../components/Toast";
     setTimeout(() => { el.style.display = "none"; }, 3500);
   }
 
+  function launchConfetti() {
+    const count = 60;
+    const defaults = { origin: { y: 0.7 }, zIndex: 9999 };
+    const colors = ["#6cd336", "#8ef05b", "#4ba91d", "#fff", "#ffd700"];
+
+    function fire(particleRatio: number, opts: { spread?: number; startVelocity?: number; scalar?: number; decay?: number } = {}) {
+      const particles = Math.floor(count * particleRatio);
+      const confetti = document.createElement("canvas");
+      confetti.style.position = "fixed";
+      confetti.style.top = "0";
+      confetti.style.left = "0";
+      confetti.style.width = "100%";
+      confetti.style.height = "100%";
+      confetti.style.pointerEvents = "none";
+      confetti.style.zIndex = "9999";
+      document.body.appendChild(confetti);
+
+      const ctx = confetti.getContext("2d")!;
+      const particles_array: { x: number; y: number; vx: number; vy: number; color: string; size: number; rotation: number; vr: number }[] = [];
+
+      for (let i = 0; i < particles; i++) {
+        const spread = opts.spread || 45;
+        const startVelocity = opts.startVelocity || 45;
+        const scalar = opts.scalar || 1;
+        const decay = opts.decay || 0.99;
+
+        const angle = (Math.random() * spread - spread / 2) * (Math.PI / 180);
+        const velocity = startVelocity * scalar * (0.5 + Math.random() * 0.5);
+
+        particles_array.push({
+          x: confetti.width / 2,
+          y: confetti.height * 0.7,
+          vx: Math.cos(angle) * velocity,
+          vy: -Math.sin(angle) * velocity,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          size: 6 + Math.random() * 4,
+          rotation: Math.random() * 360,
+          vr: (Math.random() - 0.5) * 10,
+        });
+      }
+
+      let frame = 0;
+      function animate() {
+        ctx.clearRect(0, 0, confetti.width, confetti.height);
+        let alive = 0;
+        for (const p of particles_array) {
+          if (p.y < confetti.height && p.x > 0 && p.x < confetti.width) {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.3;
+            p.vx *= 0.99;
+            p.rotation += p.vr;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rotation * Math.PI / 180);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+            ctx.restore();
+            alive++;
+          }
+        }
+        frame++;
+        if (alive > 0 && frame < 120) {
+          requestAnimationFrame(animate);
+        } else {
+          document.body.removeChild(confetti);
+        }
+      }
+      animate();
+    }
+
+    fire(1, { spread: 60, startVelocity: 55, scalar: 1.2 });
+    setTimeout(() => fire(0.5, { spread: 80, startVelocity: 30 }), 150);
+    setTimeout(() => fire(0.3, { spread: 100, startVelocity: 20 }), 300);
+  }
+
+  function launchConfettiFromSides() {
+    const colors = ["#6cd336", "#8ef05b", "#4ba91d", "#fff", "#ffd700"];
+
+function fireFromSide(side: "left" | "right") {
+      const confetti = document.createElement("canvas");
+      confetti.style.position = "fixed";
+      confetti.style.top = "0";
+      confetti.style.left = "0";
+      confetti.style.width = "100%";
+      confetti.style.height = "100%";
+      confetti.style.pointerEvents = "none";
+      confetti.style.zIndex = "9999";
+      document.body.appendChild(confetti);
+
+      const ctx = confetti.getContext("2d")!;
+      const particles: { x: number; y: number; vx: number; vy: number; color: string; size: number; rotation: number; vr: number }[] = [];
+
+      for (let i = 0; i < 25; i++) {
+        const angle = (Math.random() * 30 + 15) * (Math.PI / 180) * (side === "left" ? 1 : -1);
+        const velocity = 6 + Math.random() * 4;
+        const size = 3 + Math.random() * 2;
+
+        particles.push({
+          x: side === "left" ? 0 : confetti.width,
+          y: confetti.height * (0.4 + Math.random() * 0.4),
+          vx: Math.cos(angle) * velocity,
+          vy: -Math.sin(angle) * velocity * 0.3,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          size,
+          rotation: Math.random() * 360,
+          vr: (Math.random() - 0.5) * 3,
+        });
+      }
+
+      let frame = 0;
+      function animate() {
+        ctx.clearRect(0, 0, confetti.width, confetti.height);
+        let alive = 0;
+        for (const p of particles) {
+          if (p.x > -50 && p.x < confetti.width + 50 && p.y < confetti.height + 50) {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.1;
+            p.vx *= 0.99;
+            p.rotation += p.vr;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+            alive++;
+          }
+        }
+        if (alive > 0) {
+          requestAnimationFrame(animate);
+        } else {
+          document.body.removeChild(confetti);
+        }
+      }
+      animate();
+    }
+
+    fireFromSide("left");
+    setTimeout(() => fireFromSide("right"), 200);
+  }
+
   async function loadData() {
+    // Check for confetti trigger from page reload
+    if (sessionStorage.getItem("showConfetti") === "1") {
+      sessionStorage.removeItem("showConfetti");
+      launchConfettiFromSides();
+    }
+
     const loadingEl = document.getElementById("sr-loading")!;
     const errorEl   = document.getElementById("sr-error")!;
     const contentEl = document.getElementById("sr-content")!;
 
     try {
-      const execs = await getRoles();
+      const [execs, myNomsRaw] = await Promise.all([
+        getRoles(),
+        getMyNominations(currentUserEmail).catch(() => [] as Array<{ id: number; executiveCandidateId: number; roleTitle: string }>),
+      ]);
+
       const exec = execs.find((e) => e.id === Number(execId));
       if (!exec) throw new Error("Executive not found");
 
-      // Check if current user is this executive leader
       isCurrentUserExec = exec.email && exec.email.toLowerCase() === currentUserEmail;
+      myNoms = myNomsRaw;
 
       loadingEl.style.display = "none";
       contentEl.style.display = "block";
@@ -149,19 +300,14 @@ import { Toast } from "../../components/Toast";
       document.getElementById("role-name-box")!.textContent = decodeURIComponent(roleTitle);
       document.getElementById("role-description")!.textContent = responsibilities[decodeURIComponent(roleTitle)] || "";
 
-      // Get user's existing nominations
-      try { myNoms = await getMyNominations(currentUserEmail); } catch { /* ignore */ }
-
       loadNominees();
 
       const nominateBtn = document.getElementById("nominate-btn")!;
       const withdrawBtn = document.getElementById("withdraw-btn")!;
 
-      // Check nomination status for this exec
       const myNomForThisExec = myNoms.find(n => n.executiveCandidateId === Number(execId));
       const myNomForThisRole = myNoms.find(n => n.executiveCandidateId === Number(execId) && n.roleTitle === decodeURIComponent(roleTitle));
 
-      // Show/hide buttons based on nomination state
       if (isCurrentUserExec) {
         nominateBtn.style.display = "none";
         withdrawBtn.style.display = "none";
@@ -175,7 +321,6 @@ import { Toast } from "../../components/Toast";
         showNotif("You already nominated yourself for another role under this executive.", true);
       }
 
-      // Nominate self
       nominateBtn.addEventListener("click", async () => {
         try {
           const studentData = await verifyStudentEmail(currentUserEmail);
@@ -188,6 +333,7 @@ import { Toast } from "../../components/Toast";
             name: studentName,
           });
           showNotif("You have been nominated successfully!");
+          sessionStorage.setItem("showConfetti", "1");
           myNoms.push({ id: 0, executiveCandidateId: Number(execId), roleTitle: decodeURIComponent(roleTitle) });
           loadNominees();
           window.location.reload();
@@ -196,7 +342,6 @@ import { Toast } from "../../components/Toast";
         }
       });
 
-      // Withdraw
       withdrawBtn.addEventListener("click", async () => {
         const nomId = withdrawBtn.getAttribute("data-nom-id");
         if (!nomId) return;
@@ -365,17 +510,20 @@ import { Toast } from "../../components/Toast";
     display: inline-block;
     padding: 0.2rem 0.65rem;
     border-radius: 0.4rem;
-    background: var(--accent-glow);
-    color: var(--accent);
-    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #fff;
+    border: none;
     font-weight: 600;
     font-size: 0.82rem;
   }
 
   @media (max-width: 640px) {
-    .exec-header { flex-direction: column; text-align: center; }
+    .sr-page { padding: 1rem 1rem 4rem; }
+    .page-top { padding: 1rem 1rem 0; }
+    .exec-header { flex-direction: column; text-align: center; gap: 1rem; padding: 1.25rem; }
     .exec-header-left { flex-direction: column; }
     .exec-header-right { max-width: 100%; }
+    .role-description { max-width: 100%; margin-left: auto; margin-right: auto; }
   }
 
   /* ── Nominees Section ───────────────────────────────────── */
@@ -402,16 +550,16 @@ import { Toast } from "../../components/Toast";
     gap: 0.5rem;
     padding: 0.6rem 1.2rem;
     border-radius: 0.75rem;
-    border: 1px solid var(--accent);
-    background: var(--accent-glow);
-    color: var(--accent-light);
+    border: none;
+    background: var(--accent);
+    color: #fff;
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
   }
   .btn-nominate:hover {
-    background: var(--accent);
+    background: var(--accent-light);
     color: #fff;
   }
   .btn-nominate:disabled {
@@ -522,8 +670,8 @@ import { Toast } from "../../components/Toast";
     padding: 0.5rem 0.7rem;
     border-radius: 0.5rem;
     border: 1px solid var(--accent);
-    background: transparent;
-    color: var(--accent-light);
+    background: linear-gradient(180deg, rgba(108, 211, 54, 0.15), rgba(108, 211, 54, 0.05));
+    color: var(--accent);
     font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
@@ -540,6 +688,7 @@ import { Toast } from "../../components/Toast";
     cursor: not-allowed;
     border-color: var(--border-color);
     color: var(--text-muted);
+    background: transparent;
   }
   .vote-count-num {
     font-size: 0.85rem;
@@ -547,7 +696,9 @@ import { Toast } from "../../components/Toast";
   }
 
   @media (max-width: 480px) {
-    .nominee-card { flex-direction: row; align-items: center; }
+    .nominee-card { gap: 0.6rem; padding: 0.85rem 0.9rem; }
+    .nominee-info { gap: 0.6rem; }
+    .btn-vote-thumb { padding: 0.4rem 0.55rem; }
   }
 
   /* ── Notification Toast ─────────────────────────────────── */

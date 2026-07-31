@@ -18,6 +18,9 @@ const { title, description = "SNOW Campus Community — Official Election Portal
     <meta name="description" content={description} />
     <meta name="theme-color" content="#0a1118" />
     <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <title>{title} — SNOW Campus Elections</title>
   </head>
   <body>
@@ -32,11 +35,21 @@ const { title, description = "SNOW Campus Community — Official Election Portal
 
     <slot />
 
+    <!-- Global loading overlay -->
+    <div id="global-loader" class="global-loader" aria-hidden="true">
+      <div class="loader-spinner">
+        <svg class="spinner-ring" viewBox="0 0 50 50">
+          <circle class="spinner-path" cx="25" cy="25" r="20" fill="none" stroke-width="4" />
+        </svg>
+      </div>
+    </div>
+
     <!-- Theme toggle global handler -->
     <script>
       function applyTheme(theme: string) {
         document.documentElement.setAttribute("data-theme", theme);
         localStorage.setItem("theme", theme);
+        window.dispatchEvent(new CustomEvent("themechange", { detail: { theme } }));
       }
 
       document.addEventListener("click", (e) => {
@@ -45,6 +58,58 @@ const { title, description = "SNOW Campus Community — Official Election Portal
         const current = document.documentElement.getAttribute("data-theme") ?? "dark";
         applyTheme(current === "dark" ? "light" : "dark");
       });
+
+      // Global loading state management
+      const loader = document.getElementById("global-loader");
+      let loaderTimeout: number;
+      let pendingRequests = 0;
+
+      function showLoader() {
+        pendingRequests++;
+        clearTimeout(loaderTimeout);
+        loader?.classList.add("visible");
+      }
+
+      function hideLoader() {
+        pendingRequests = Math.max(0, pendingRequests - 1);
+        if (pendingRequests === 0) {
+          loaderTimeout = window.setTimeout(() => {
+            loader?.classList.remove("visible");
+          }, 300);
+        }
+      }
+
+      // Track fetch/XHR requests
+      const originalFetch = window.fetch;
+      window.fetch = async (...args) => {
+        showLoader();
+        try {
+          return await originalFetch(...args);
+        } finally {
+          hideLoader();
+        }
+      };
+
+      const originalXHROpen = XMLHttpRequest.prototype.open;
+      XMLHttpRequest.prototype.open = function(...args) {
+        this.addEventListener("loadstart", showLoader);
+        this.addEventListener("loadend", hideLoader);
+        return originalXHROpen.apply(this, args);
+      };
+
+      // Show loader on navigation (for non-SPA links)
+      document.addEventListener("click", (e) => {
+        const link = (e.target as HTMLElement).closest("a[href]");
+        if (link && !link.hasAttribute("target") && !link.href.startsWith("#") && !link.href.includes("javascript:")) {
+          showLoader();
+        }
+      });
+
+      // Handle Astro view transitions if enabled
+      if ("onbeforeswap" in document) {
+        document.addEventListener("astro:before-swap", showLoader);
+        document.addEventListener("astro:after-swap", hideLoader);
+      }
     </script>
   </body>
 </html>
