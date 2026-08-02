@@ -17,7 +17,7 @@ export async function nominate(req, res) {
     return res.status(403).json({ error: result.error });
   }
   if (result.alreadyNominated) {
-    return res.status(409).json({ error: 'You are already nominated for this role', nomination: result.nomination });
+    return res.status(409).json({ error: 'You can only nominate yourself for one role. Withdraw your existing nomination first.', nomination: result.nomination });
   }
   generateNominationsReport().catch(err => console.error('Export failed:', err));
   res.status(201).json({ success: true });

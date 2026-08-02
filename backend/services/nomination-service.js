@@ -36,21 +36,9 @@ export async function nominateSelf(execId, roleTitle, email, name) {
     return { error: 'Executive leaders cannot nominate themselves for coordinator roles' };
   }
 
-  const { data: existingUnderExec } = await supabase
-    .from('Nominations')
-    .select('id')
-    .eq('executiveCandidateId', execId)
-    .eq('studentEmail', email)
-    .maybeSingle();
-  if (existingUnderExec) {
-    return { error: 'You can only nominate yourself for one role under this executive. Withdraw your existing nomination first.' };
-  }
-
   const { data: existing } = await supabase
     .from('Nominations')
     .select('id')
-    .eq('executiveCandidateId', execId)
-    .eq('roleTitle', roleTitle)
     .eq('studentEmail', email)
     .maybeSingle();
   if (existing) return { alreadyNominated: true, nomination: existing };
