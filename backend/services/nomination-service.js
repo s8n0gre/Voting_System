@@ -111,6 +111,17 @@ export async function voteForNominee(voterEmail, nominationId) {
     .maybeSingle();
   if (existingVote) return { error: 'You already voted for this candidate' };
 
+  const { data: priorVotes } = await supabase
+    .from('NomineeVotes')
+    .select('id, nomination:Nominations(executiveCandidateId)')
+    .eq('voterEmail', voterEmail);
+  const votedUnderExec = (priorVotes || []).some(
+    v => v.nomination?.executiveCandidateId === nomination.executiveCandidateId
+  );
+  if (votedUnderExec) {
+    return { error: 'You can only vote for one coordinator role under this executive' };
+  }
+
   await supabase.from('NomineeVotes').insert({ voterEmail, nominationId });
   const { data: current } = await supabase
     .from('Nominations')
