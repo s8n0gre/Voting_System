@@ -79,6 +79,18 @@ const { title, description = "SNOW Campus Community — Official Election Portal
         }
       }
 
+      function resetLoader() {
+        pendingRequests = 0;
+        clearTimeout(loaderTimeout);
+        loader?.classList.remove("visible");
+      }
+
+      // bfcache restores frozen JS state, so pendingRequests can be stuck > 0
+      // and the loader stays visible forever. Reset it on restore.
+      window.addEventListener("pageshow", (event) => {
+        if (event.persisted) resetLoader();
+      });
+
       // Track fetch/XHR requests
       const originalFetch = window.fetch;
       window.fetch = async (...args) => {
@@ -100,7 +112,7 @@ const { title, description = "SNOW Campus Community — Official Election Portal
       // Show loader on navigation (for non-SPA links)
       document.addEventListener("click", (e) => {
         const link = (e.target as HTMLElement).closest("a[href]");
-        if (link && !link.hasAttribute("target") && !link.href.startsWith("#") && !link.href.includes("javascript:")) {
+        if (link && !e.defaultPrevented() && !link.hasAttribute("target") && !link.href.startsWith("#") && !link.href.includes("javascript:")) {
           showLoader();
         }
       });

@@ -172,11 +172,23 @@ import { Toast } from "../components/Toast";
 <script>
   import { getSessionEmail } from "../lib/auth";
 
-  function init() {
+  async function init() {
     const email = getSessionEmail();
     if (!email) {
       window.location.href = "/login";
       return;
+    }
+    try {
+      const res = await fetch(`${import.meta.env.PUBLIC_API_URL ?? "/api"}/roles`);
+      const roles = await res.json();
+      const byName = new Map(roles.map((r) => [r.name, r.id]));
+      document.querySelectorAll(".candidate-card").forEach((card) => {
+        const name = card.getAttribute("data-exec-name");
+        const id = byName.get(name);
+        if (id != null) card.setAttribute("data-exec-id", String(id));
+      });
+    } catch {
+      // fall back to hardcoded ids
     }
     bindRoleCards();
   }

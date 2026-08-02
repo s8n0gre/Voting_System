@@ -99,6 +99,7 @@ import { Toast } from "../../components/Toast";
   let myNoms: Array<{ id: number; executiveCandidateId: number; roleTitle: string }> = [];
   let currentUserEmail = email.toLowerCase();
   let isCurrentUserExec = false;
+  let buttonsBound = false;
 
   const responsibilities: Record<string, string> = {
     "Strategy Coordinator": "Develop the annual roadmap, monitor community goals, track performance, and ensure all initiatives align with the community's vision and mission.",
@@ -281,6 +282,10 @@ function fireFromSide(side: "left" | "right") {
     const errorEl   = document.getElementById("sr-error")!;
     const contentEl = document.getElementById("sr-content")!;
 
+    loadingEl.style.display = "flex";
+    contentEl.style.display = "none";
+    errorEl.style.display   = "none";
+
     try {
       const [execs, myNomsRaw] = await Promise.all([
         getRoles(),
@@ -320,6 +325,9 @@ function fireFromSide(side: "left" | "right") {
         withdrawBtn.style.display = "none";
         showNotif("You already nominated yourself for another role under this executive.", true);
       }
+
+      if (buttonsBound) return;
+      buttonsBound = true;
 
       nominateBtn.addEventListener("click", async () => {
         try {
@@ -439,6 +447,12 @@ function fireFromSide(side: "left" | "right") {
   }
 
   loadData();
+
+  // Re-run load when restored from the bfcache (browser back/forward),
+  // otherwise the loading skeleton stays frozen forever.
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) loadData();
+  });
 </script>
 
 <style>

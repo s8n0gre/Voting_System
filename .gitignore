@@ -9,3 +9,5 @@ results/*.xlsx
 *.db-shm
 *.db-wal
 *.xlsx
+.vercel
+.env*
