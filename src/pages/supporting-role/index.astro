@@ -320,10 +320,10 @@ function fireFromSide(side: "left" | "right") {
         nominateBtn.style.display = "none";
         withdrawBtn.style.display = "inline-flex";
         withdrawBtn.setAttribute("data-nom-id", String(myNomForThisRole.id));
-      } else if (myNomForThisExec) {
+      } else if (myNoms.length > 0) {
         nominateBtn.style.display = "none";
         withdrawBtn.style.display = "none";
-        showNotif("You already nominated yourself for another role under this executive.", true);
+        showNotif("You can only nominate yourself for one role. Withdraw your existing nomination first.", true);
       }
 
       if (buttonsBound) return;
