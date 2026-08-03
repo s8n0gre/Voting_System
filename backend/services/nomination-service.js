@@ -80,7 +80,7 @@ export async function getMyNominationsByExec(email, execId) {
 export async function voteForNominee(voterEmail, nominationId) {
   const { data: nomination, error: nomErr } = await supabase
     .from('Nominations')
-    .select('id, executiveCandidateId, studentEmail')
+    .select('id, executiveCandidateId, roleTitle, studentEmail')
     .eq('id', nominationId)
     .single();
   if (nomErr || !nomination) return { error: 'Nomination not found' };
@@ -101,13 +101,14 @@ export async function voteForNominee(voterEmail, nominationId) {
 
   const { data: priorVotes } = await supabase
     .from('NomineeVotes')
-    .select('id, nomination:Nominations(executiveCandidateId)')
+    .select('id, nomination:Nominations(executiveCandidateId, roleTitle)')
     .eq('voterEmail', voterEmail);
-  const votedUnderExec = (priorVotes || []).some(
+  const votedSameRole = (priorVotes || []).some(
     v => v.nomination?.executiveCandidateId === nomination.executiveCandidateId
+      && v.nomination?.roleTitle === nomination.roleTitle
   );
-  if (votedUnderExec) {
-    return { error: 'You can only vote for one coordinator role under this executive' };
+  if (votedSameRole) {
+    return { error: 'You can only vote for one nominee in this coordinator role' };
   }
 
   await supabase.from('NomineeVotes').insert({ voterEmail, nominationId });
