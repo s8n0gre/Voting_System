@@ -68,6 +68,18 @@ export async function getNominationsReportBuffer() {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Voting System';
 
+  if (Object.keys(grouped).length === 0) {
+    const emptySheet = workbook.addWorksheet('No Nominations');
+    emptySheet.columns = [
+      { header: 'Role', key: 'roleTitle', width: 30 },
+      { header: 'Name', key: 'studentName', width: 30 },
+      { header: 'Email', key: 'studentEmail', width: 35 },
+      { header: 'Votes', key: 'voteCount', width: 10 },
+    ];
+    emptySheet.addRow({ roleTitle: 'No nominations yet' });
+    return workbook.xlsx.writeBuffer();
+  }
+
   for (const group of Object.values(grouped)) {
     const sheetName = `${group.execName} - ${group.execRole}`.slice(0, 31);
     const sheet = workbook.addWorksheet(sheetName);
