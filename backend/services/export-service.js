@@ -42,6 +42,19 @@ export async function generateNominationsReport() {
   await writeFile(path.join(resultsDir, 'results.xlsx'), buffer);
 }
 
+const REPORT_EXECS = [
+  {
+    name: 'Mohan K',
+    role: 'Community Lead',
+    roles: ['Events Coordinator', 'Engagement Coordinator', 'Partnership Coordinator'],
+  },
+  {
+    name: 'Srikeerthi C B',
+    role: 'Secretary',
+    roles: ['Administration Coordinator', 'Documentation Coordinator', 'Communication Coordinator'],
+  },
+];
+
 export async function getNominationsReportBuffer() {
   const { data: noms, error } = await supabase
     .from('Nominations')
@@ -59,6 +72,7 @@ export async function getNominationsReportBuffer() {
 
   const grouped = {};
   for (const n of noms) {
+    if (!REPORT_EXECS.some(e => e.name === n.execName)) continue;
     const key = `${n.executiveCandidateId}|${n.execName}|${n.execRole}`;
     if (!grouped[key]) grouped[key] = { execName: n.execName, execRole: n.execRole, roles: {} };
     if (!grouped[key].roles[n.roleTitle]) grouped[key].roles[n.roleTitle] = [];
@@ -68,40 +82,38 @@ export async function getNominationsReportBuffer() {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Voting System';
 
-  if (Object.keys(grouped).length === 0) {
-    const emptySheet = workbook.addWorksheet('No Nominations');
-    emptySheet.columns = [
-      { header: 'Role', key: 'roleTitle', width: 30 },
-      { header: 'Name', key: 'studentName', width: 30 },
-      { header: 'Email', key: 'studentEmail', width: 35 },
-      { header: 'Votes', key: 'voteCount', width: 10 },
-    ];
-    emptySheet.addRow({ roleTitle: 'No nominations yet' });
-    return workbook.xlsx.writeBuffer();
-  }
+  const COLUMNS = [
+    { header: 'Role', key: 'roleTitle', width: 30 },
+    { header: 'Name', key: 'studentName', width: 30 },
+    { header: 'Email', key: 'studentEmail', width: 35 },
+    { header: 'Votes', key: 'voteCount', width: 10 },
+  ];
 
-  for (const group of Object.values(grouped)) {
-    const sheetName = `${group.execName} - ${group.execRole}`.slice(0, 31);
+  for (const exec of REPORT_EXECS) {
+    const sheetName = `${exec.name} - ${exec.role}`.slice(0, 31);
     const sheet = workbook.addWorksheet(sheetName);
-
-    sheet.columns = [
-      { header: 'Role', key: 'roleTitle', width: 30 },
-      { header: 'Name', key: 'studentName', width: 30 },
-      { header: 'Email', key: 'studentEmail', width: 35 },
-      { header: 'Votes', key: 'voteCount', width: 10 },
-    ];
+    sheet.columns = COLUMNS;
 
     const headerRow = sheet.getRow(1);
     headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
     headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1a1a2e' } };
 
+    const group = Object.values(grouped).find(g => g.execName === exec.name);
     let rowIdx = 2;
-    for (const [roleTitle, nominees] of Object.entries(group.roles)) {
+
+    for (const roleTitle of exec.roles) {
       const sectionRow = sheet.getRow(rowIdx);
       sectionRow.getCell(1).value = roleTitle;
       sectionRow.font = { bold: true, size: 12, color: { argb: 'FF6d28d9' } };
       sectionRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F0FF' } };
       rowIdx++;
+
+      const nominees = group?.roles[roleTitle] || [];
+      if (nominees.length === 0) {
+        sheet.getRow(rowIdx).getCell(2).value = 'No nominations yet';
+        rowIdx++;
+        continue;
+      }
 
       for (const n of nominees) {
         sheet.getRow(rowIdx).getCell(2).value = n.studentName;
