@@ -95,10 +95,11 @@ async function seed() {
     if (parts.length >= 2) {
       const name = parts[0].trim();
       const email = parts[1].trim().toLowerCase();
+      const department = parts[2] ? parts[2].trim() : null;
       const rollNo = email.split('@')[0];
       const { error } = await supabase
         .from('Students')
-        .upsert({ rollNo, name, department: null, email }, { onConflict: 'rollNo', ignoreDuplicates: true });
+        .upsert({ rollNo, name, department, email }, { onConflict: 'rollNo', ignoreDuplicates: true });
       if (!error) imported++;
     }
   }
